@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>Poka-Yoke • Scanner IBRIDO (QR + Barcode) • Invio a Google Sheet</title>
+<style>
+  :root{--ok:#16a34a;--err:#dc2626;--panel:#0f172a}
+  html,body{margin:0;height:100%;background:#000;color:#fff;font-family:system-ui,Segoe UI,Roboto,Arial}
+  .wrap{min-height:100%;display:flex;flex-direction:column}
+  header{padding:12px 16px;background:#0a0f1d;border-bottom:1px solid #1f2937}
+  header h1{margin:0;font-size:18px}
+  main{flex:1;display:flex;flex-direction:column;gap:12px;padding:12px}
+  .panel{background:var(--panel);border:1px solid #1f2937;border-radius:14px;padding:14px}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  .btn{flex:1 1 150px;padding:12px 14px;border-radius:12px;border:1px solid #243045;background:#111827;color:#fff;font-size:16px;font-weight:700;cursor:pointer}
+  .btn:active{transform:scale(.98)}
+  .btn-sm{flex:0 0 auto;font-size:14px;padding:10px 12px}
+  .btn-blue{background:#1e293b;border-color:#334155}
+  .status{display:flex;flex-direction:column;gap:6px;align-items:center;text-align:center}
+  #resultText{font-size:20px;margin:4px 0 2px}
+  #codes{display:flex;flex-direction:column;gap:10px;align-items:stretch;margin-top:4px}
+  .codeBox{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-radius:12px;border:1px solid #334155;background:#0b1220}
+  .codeLabel{font-size:14px;color:#9ca3af;font-weight:700}
+  .codeValue{flex:1;text-align:right;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-weight:900;letter-spacing:.5px;font-size:clamp(22px,3.8vh,40px);color:#e5e7eb;word-break:break-all}
+  .codeBox.ok{border-color:#14532d;background:rgba(22,163,74,.12)}
+  .codeBox.err{border-color:#7f1d1d;background:rgba(220,38,38,.10)}
+  .codeValue.ok{color:#86efac}
+  .codeValue.err{color:#fecaca}
+  .badge{display:inline-block;padding:6px 10px;border-radius:999px;font-weight:800;border:1px solid #374151}
+  .ok{background:rgba(22,163,74,.15);color:#86efac;border-color:#14532d}
+  .err{background:rgba(220,38,38,.15);color:#fecaca;border-color:#7f1d1d}
+  #cameraArea{display:none}
+  #preview{position:relative;width:100%;max-width:520px;height:62vh;margin:auto;border-radius:12px;overflow:hidden;background:#000}
+  #video{position:absolute;inset:0;object-fit:cover;width:100%;height:100%}
+  #overlay{position:absolute;inset:0;pointer-events:none}
+  #guide{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:30%;height:30%;border:3px solid rgba(255,255,255,.95);border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.4) inset;pointer-events:none}
+  #laser{position:absolute;left:50%;top:50%;width:50px;height:50px;border:2px solid rgba(255,50,50,.8);border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 12px rgba(255,60,60,.8);pointer-events:none}
+  #flash{position:fixed;inset:0;pointer-events:none;opacity:0;transition:opacity .18s}
+  footer{padding:10px 16px;color:#94a3b8;font-size:12px;text-align:center;border-top:1px solid #1f2937}
+  .small{font-size:12px;color:#9ca3af}
+  #statusLine{font-size:12px;color:#cbd5e1;text-align:center;margin-top:6px;min-height:1em}
+  .input{background:#0b1220;border:1px solid #243045;border-radius:10px;color:#e5e7eb;padding:10px 12px;font-size:16px;flex:1 1 180px}
+  .input::placeholder{color:#64748b}
+  label.field{display:flex;flex-direction:column;gap:6px;flex:1 1 180px}
+  label.field span{font-size:12px;color:#9ca3af}
+  #righeBox{max-height:28vh;overflow:auto;border:1px solid #1f2937;border-radius:10px}
+  .tbl{width:100%;border-collapse:collapse}
+  .tbl th,.tbl td{padding:8px 10px;border-bottom:1px solid #1f2937;font-size:14px}
+  .tbl th{position:sticky;top:0;background:#0a0f1d;text-align:left;font-weight:800}
+  #qtyModal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:9999}
+  .modalCard{background:#0b1220;border:1px solid #334155;border-radius:14px;padding:16px;min-width:280px;max-width:90vw;box-shadow:0 10px 30px rgba(0,0,0,.6)}
+  .modalTitle{font-weight:800;margin-bottom:8px}
+  .qtyRow{display:flex;gap:10px;align-items:center;justify-content:center;margin:12px 0}
+  .qtyBtn{padding:10px 14px;border-radius:10px;border:1px solid #334155;background:#111827;color:#fff;font-weight:800;font-size:20px;cursor:pointer}
+  .qtyInput{width:100px;text-align:center;font-size:22px;font-weight:900;padding:8px 10px;border-radius:10px;border:1px solid #334155;background:#0a0f1d;color:#fff}
+  .modalActions{display:flex;gap:10px;justify-content:flex-end;margin-top:8px}
+  .btn-green{background:#14532d;border-color:#14532d}
+  .btn-outline{background:#0b1220;border-color:#334155}
+</style>
+<script src="https://unpkg.com/@zxing/library@latest"></script>
+<script src="https://unpkg.com/@zxing/browser@latest"></script>
+</head>
+<body>
+<div class="wrap">
+  <header><h1>Poka-Yoke • Scanner IBRIDO (QR + Barcode) • Invio a Google Sheet</h1></header>
+
+  <!-- Testata: commessa/posizione + Finalizza -->
+  <div class="panel">
+    <div class="row">
+      <label class="field">
+        <span>Numero commessa</span>
+        <input id="commessa" class="input" placeholder="Es. 024830"/>
+      </label>
+      <label class="field">
+        <span>Posizione</span>
+        <input id="posizione" class="input" placeholder="Es. POS 0020"/>
+      </label>
+      <button id="finalizza" class="btn btn-blue" style="flex:0 0 200px">🧾 Finalizza picking</button>
+    </div>
+    <div class="small" style="margin-top:6px">Compila <b>commessa</b> e <b>posizione</b> prima di iniziare.</div>
+  </div>
+
+  <main>
+    <div class="panel status">
+      <div id="badge" class="badge">Pronto</div>
+      <div id="resultText">Scansiona prima la <b>LISTA</b>, poi il <b>PEZZO</b></div>
+      <div id="codes"></div>
+      <div class="small">Allinea il codice nel <b>quadrato</b> e centra nel cerchio rosso 🔴.</div>
+    </div>
+
+    <div class="panel">
+      <div class="row">
+        <button id="scanList" class="btn">📋 LISTA</button>
+        <button id="scanItem" class="btn">📦 PEZZO</button>
+        <button id="reset" class="btn">🔄 Reset</button>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button id="torch" class="btn btn-sm" disabled>🔦 LED</button>
+        <button id="zoomIn" class="btn btn-sm" disabled>🔎 +</button>
+        <button id="zoomOut" class="btn btn-sm" disabled>🔍 −</button>
+        <label class="small"><input type="checkbox" id="confirm2" checked> Conferma doppia</label>
+        <label class="small"><input type="checkbox" id="voice" checked> Annuncio vocale</label>
+        <span id="statusLine"></span>
+      </div>
+    </div>
+
+    <div id="cameraArea" class="panel">
+      <div id="preview">
+        <video id="video" muted playsinline></video>
+        <canvas id="overlay"></canvas>
+        <div id="guide"></div>
+        <div id="laser"></div>
+      </div>
+      <div class="small" style="text-align:center;margin-top:6px">Se fatica: usa <b>Zoom</b> o attiva <b>LED</b>.</div>
+    </div>
+
+    <!-- Righe raccolte -->
+    <div class="panel">
+      <div class="row" style="align-items:center;justify-content:space-between">
+        <div class="small">Righe raccolte (scheda in tempo reale)</div>
+        <button id="scaricaCSV" class="btn btn-sm btn-blue" disabled>⬇️ Scarica scheda (CSV)</button>
+      </div>
+      <div id="righeBox" style="margin-top:8px">
+        <table class="tbl" id="righeTbl">
+          <thead><tr><th>Ora</th><th>Codice</th><th>Q.tà</th><th>Commessa</th><th>Posizione</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <footer>Consenti fotocamera • Funziona meglio in Chrome Android (aggiungi alla Home)</footer>
+</div>
+
+<!-- Modal quantità -->
+<div id="qtyModal">
+  <div class="modalCard">
+    <div class="modalTitle">Inserisci quantità prelevata</div>
+    <div id="qtyInfo" class="small" style="margin-bottom:6px;color:#cbd5e1"></div>
+    <div class="qtyRow">
+      <button id="qtyMinus" class="qtyBtn">−</button>
+      <input id="qtyInput" class="qtyInput" type="number" min="1" step="1" value="1" />
+      <button id="qtyPlus" class="qtyBtn">+</button>
+    </div>
+    <div class="modalActions">
+      <button id="qtyCancel" class="btn btn-sm btn-outline">Annulla</button>
+      <button id="qtyOk" class="btn btn-sm btn-green">Conferma</button>
+    </div>
+  </div>
+</div>
+
+<div id="flash"></div>
+
+<script>
+/* === CONFIG Google Sheet ===
+   INCOLLA QUI il TUO endpoint (/exec) e il TOKEN identico a quello nello Script */
+const GS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxRHS6MYgB4dcwyOXStxFAFLZyG7R-uJL8A19G0jQ96V56mwYRPhmmL_REn9jjUck0d/exec';
+const GS_TOKEN    = 'TOKEN_PICKING_2025';
+
+/* Risveglia la voce al primo tocco */
+document.addEventListener('click',()=>{speechSynthesis.getVoices();},{once:true});
+
+/* Stato app */
+let expected=null, scanned=null, mode=null, stream, track, confirmBuf=[], lastVal=null;
+let picks=[]; // {ts, codice, qty, commessa, posizione}
+let pendingOK=null;
+
+/* Elementi utili */
+const el=id=>document.getElementById(id);
+const video=el('video'), overlay=el('overlay'), guide=el('guide'), laser=el('laser');
+const badge=el('badge'), resultText=el('resultText'), codes=el('codes');
+const btnTorch=el('torch'), btnZoomIn=el('zoomIn'), btnZoomOut=el('zoomOut');
+const confirm2=el('confirm2'), voice=el('voice'), cameraArea=el('cameraArea'), statusLine=el('statusLine'), flash=el('flash');
+const commessa=el('commessa'), posizione=el('posizione');
+const qtyModal=el('qtyModal'), qtyInput=el('qtyInput'), qtyMinus=el('qtyMinus'), qtyPlus=el('qtyPlus'), qtyOk=el('qtyOk'), qtyCancel=el('qtyCancel'), qtyInfo=el('qtyInfo');
+const scaricaCSV=el('scaricaCSV'), finalizza=el('finalizza');
+
+/* Audio + voce */
+let actx;
+function tone(f=880,d=150,t='sine',v=.25){try{if(!actx)actx=new (window.AudioContext||window.webkitAudioContext)();const o=actx.createOscillator(),g=actx.createGain();o.type=t;o.frequency.value=f;g.gain.value=v;o.connect(g);g.connect(actx.destination);o.start();setTimeout(()=>o.stop(),d);}catch(e){}}
+function okSound(){tone(900,120);setTimeout(()=>tone(1200,140),130)}
+function errSound(){tone(250,240,'square',.22);setTimeout(()=>tone(180,250,'square',.20),220)}
+function speak(msg,rate=1,pitch=1,vol=1){if(!voice.checked)return;try{const u=new SpeechSynthesisUtterance(msg);u.lang='it-IT';u.volume=vol;u.rate=rate;u.pitch=pitch;const v=speechSynthesis.getVoices().find(x=>x.lang.startsWith('it'));if(v)u.voice=v;speechSynthesis.cancel();speechSynthesis.speak(u);}catch(e){}}
+function vibrate(p){if(navigator.vibrate)navigator.vibrate(p)}
+function flashScreen(c){flash.style.background=c;flash.style.opacity=.6;setTimeout(()=>flash.style.opacity=0,160)}
+function setBadge(t,cls){badge.textContent=t;badge.className='badge '+(cls==='ok'?'ok':cls==='err'?'err':'')}
+function norm(s){return s?String(s).trim().toUpperCase():s}
+function status(m){statusLine.textContent=m||''}
+function resetConfirm(){confirmBuf=[];lastVal=null;}
+
+/* UI codici grandi */
+function updateUI(){
+  const same = expected && scanned && (norm(expected) === norm(scanned));
+  const stateClass = same ? 'ok' : (expected && scanned ? 'err' : '');
+
+  const box = (label, val, cls) => `
+    <div class="codeBox ${cls||''}">
+      <div class="codeLabel">${label}</div>
+      <div class="codeValue ${cls||''}">${val ? val : '-'}</div>
+    </div>`;
+
+  codes.innerHTML = box('LISTA', expected || '', same ? 'ok' : '') +
+                    box('PEZZO', scanned  || '', stateClass);
+
+  if (expected && scanned){
+    if (same){
+      setBadge('✅ CORRETTO','ok');
+      resultText.innerHTML = 'Match perfetto!';
+      flashScreen('rgba(22,163,74,.5)'); okSound(); speak("Codice corretto",1,1.1,1); vibrate(60);
+      pendingOK = expected; // o scanned: sono uguali
+      openQtyModal(pendingOK);
+    } else {
+      setBadge('❌ ERRATO','err');
+      resultText.innerHTML = 'Codice diverso!';
+      flashScreen('rgba(220,38,38,.55)'); errSound(); speak("Errore, codice diverso",0.9,0.8,1); vibrate([60,60,180]);
+      pendingOK = null;
+    }
+  } else {
+    setBadge('Pronto');
+    resultText.innerHTML = 'Scansiona prima la <b>LISTA</b>, poi il <b>PEZZO</b>';
+  }
+}
+
+/* Modal quantità */
+function openQtyModal(code){
+  qtyInfo.innerHTML = `Codice: <b>${code}</b>`;
+  qtyInput.value = '1';
+  qtyModal.style.display = 'flex';
+  qtyInput.focus();
+}
+function closeQtyModal(){ qtyModal.style.display='none'; }
+qtyMinus.onclick = ()=>{ const v=Math.max(1, parseInt(qtyInput.value||'1',10)-1); qtyInput.value=v; };
+qtyPlus.onclick  = ()=>{ const v=Math.max(1, parseInt(qtyInput.value||'1',10)+1); qtyInput.value=v; };
+qtyCancel.onclick= ()=>{ closeQtyModal(); };
+qtyOk.onclick    = ()=>{
+  const qty = Math.max(1, parseInt(qtyInput.value||'1',10));
+  if(!pendingOK){ closeQtyModal(); return; }
+  const ts = new Date();
+  picks.push({
+    ts,
+    codice: pendingOK,
+    qty,
+    commessa: commessa.value.trim(),
+    posizione: posizione.value.trim()
+  });
+  renderPicks();
+  pendingOK = null;
+  scanned = null;
+  updateUI();
+  closeQtyModal();
+};
+
+/* Tabella righe raccolte */
+function renderPicks(){
+  const tb = document.querySelector('#righeTbl tbody');
+  tb.innerHTML = picks.map(p=>{
+    const hh = p.ts.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+    return `<tr><td>${hh}</td><td>${p.codice}</td><td>${p.qty}</td><td>${p.commessa||'-'}</td><td>${p.posizione||'-'}</td></tr>`;
+  }).join('');
+  scaricaCSV.disabled = picks.length===0;
+}
+
+/* CSV locale (opzionale) */
+function downloadCSV(){
+  if(!picks.length) return;
+  const head = 'timestamp,codice,quantita,commessa,posizione\n';
+  const body = picks.map(p=>{
+    const ts = p.ts.toISOString();
+    return [ts,p.codice,p.qty,p.commessa||'',p.posizione||''].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',');
+  }).join('\n');
+  const blob = new Blob([head+body], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `scheda_picking_${(commessa.value||'commessa')}.csv`; a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* Invio batch al Google Sheet */
+async function inviaASheetBatch() {
+  if (!picks.length) {
+    alert('Nessuna riga raccolta.');
+    return;
+  }
+  const rows = picks.map(p => ({
+    timestamp: p.ts.toISOString(),
+    codice: p.codice,
+    quantita: p.qty,
+    commessa: p.commessa || (commessa.value.trim()),
+    posizione: p.posizione || (posizione.value.trim())
+  }));
+  const payload = { secret: GS_TOKEN, rows };
+
+  try {
+    const r = await fetch(GS_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await r.json();
+    if (!r.ok || !data.ok) throw new Error(data.error || ('HTTP '+r.status));
+
+    flashScreen('rgba(22,163,74,.45)'); speak("Picking finalizzato e inviato al foglio.",1,1.05,1); vibrate(80);
+    alert(`✅ Inviate ${rows.length} righe al foglio Google.`);
+  } catch (err) {
+    flashScreen('rgba(220,38,38,.45)'); speak("Errore di invio.",0.9,0.9,1);
+    alert('Errore durante l’invio: '+err.message+'\nControlla rete, URL o token.');
+  }
+}
+
+/* Pulsanti base */
+el('scanList').onclick=()=>startScan('list');
+el('scanItem').onclick=()=>startScan('item');
+el('reset').onclick=()=>{expected=null;scanned=null;pendingOK=null;updateUI();};
+scaricaCSV.onclick = downloadCSV;
+finalizza.onclick = async ()=>{
+  if(!picks.length){ alert('Nessuna riga raccolta.'); return; }
+  downloadCSV();            // opzionale
+  await inviaASheetBatch(); // invio al Google Sheet
+};
+
+/* Avvio scansione: Detector → ZXing */
+async function startScan(which){
+  if(!commessa.value.trim() || !posizione.value.trim()){
+    alert('Inserisci Numero commessa e Posizione prima di scansionare.');
+    return;
+  }
+  mode=which; cameraArea.style.display='block'; resetConfirm(); status('Avvio camera…');
+  if('BarcodeDetector' in window){ await startDetectorHybrid(); }
+  else { await startZXingHybrid(); }
+}
+
+/* Detector nativo (ibrido QR + 1D) */
+async function startDetectorHybrid(){
+  const cons={video:{facingMode:"environment",width:{ideal:1280},height:{ideal:720},focusMode:"continuous"}};
+  stream=await navigator.mediaDevices.getUserMedia(cons).catch(()=>null);
+  if(!stream){ alert('Fotocamera non disponibile.'); cameraArea.style.display='none'; return; }
+  track=stream.getVideoTracks()[0]; video.srcObject=stream; await video.play(); setupControls(track);
+
+  const detector=new BarcodeDetector({formats:['qr_code','code_128','ean_13','ean_8','upc_a','code_39']});
+  const ctx=overlay.getContext('2d');
+
+  const loop=()=>{
+    if(video.readyState<2){ requestAnimationFrame(loop); return; }
+    overlay.width=video.videoWidth; overlay.height=video.videoHeight; ctx.clearRect(0,0,overlay.width,overlay.height);
+
+    detector.detect(video).then(codes=>{
+      const g=guide.getBoundingClientRect(), v=video.getBoundingClientRect();
+      const gx=g.left-v.left, gy=g.top-v.top, gw=g.width, gh=g.height;
+      const sx=overlay.width/v.width, sy=overlay.height/v.height;
+
+      let accepted=null;
+      for(const c of codes){
+        const r=c.boundingBox; const cx=r.x+r.width/2, cy=r.y+r.height/2;
+        const domX=cx/sx, domY=cy/sy;
+        const inGuide=(domX>=gx&&domX<=gx+gw&&domY>=gy&&domY<=gy+gh);
+        const g2=laser.getBoundingClientRect();
+        const lx=g2.left-v.left+g2.width/2, ly=g2.top-v.top+g2.height/2;
+        const dist=Math.sqrt((domX-lx)**2+(domY-ly)**2);
+        const radius=g2.width/2;
+
+        if(inGuide && dist<radius){ accepted=c.rawValue; break; }
+      }
+
+      if(accepted){
+        if(confirm2.checked){
+          if(lastVal===accepted){ confirmBuf.push(accepted); } else { confirmBuf=[accepted]; lastVal=accepted; }
+          if(confirmBuf.length>=2){ processScan(accepted); return; }
+        } else { processScan(accepted); return; }
+      }
+      requestAnimationFrame(loop);
+    }).catch(()=>requestAnimationFrame(loop));
+  };
+  loop();
+}
+
+/* ZXing fallback */
+async function startZXingHybrid(){
+  const cons={video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}};
+  const s=await navigator.mediaDevices.getUserMedia(cons).catch(()=>null);
+  if(!s){ alert('Fotocamera non disponibile.'); cameraArea.style.display='none'; return; }
+  stream=s; track=stream.getVideoTracks()[0]; setupControls(track);
+
+  const vid=document.createElement('video');
+  vid.setAttribute('playsinline',''); vid.muted=true; vid.autoplay=true; vid.srcObject=stream;
+  document.body.appendChild(vid);
+
+  const formats=[ZXing.BarcodeFormat.QR_CODE,ZXing.BarcodeFormat.CODE_128,ZXing.BarcodeFormat.EAN_13,ZXing.BarcodeFormat.UPC_A];
+  const hints=new Map(); hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,formats);
+  const reader=new ZXing.BrowserMultiFormatReader(hints);
+
+  await vid.play(); status('Inquadra il codice nel cerchio rosso…');
+
+  const loop=async()=>{
+    try{
+      const res=await reader.decodeFromVideoElement(vid);
+      if(res){ if(pointInGuideZXing(res,vid)){ processScan(res.text); return; } }
+    }catch(e){}
+    requestAnimationFrame(loop);
+  };
+  loop();
+}
+
+/* ROI per ZXing */
+function pointInGuideZXing(result,vidEl){
+  try{
+    const pts=result.resultPoints||[]; if(pts.length===0) return true;
+    let cx=0,cy=0; for(const p of pts){ cx+=p.x; cy+=p.y; } cx/=pts.length; cy/=pts.length;
+
+    const vrect=vidEl.getBoundingClientRect();
+    const vw=vidEl.videoWidth, vh=vidEl.videoHeight;
+    const scale=Math.min(vrect.width/vw, vrect.height/vh);
+    const dispW=vw*scale, dispH=vh*scale;
+    const offX=(vrect.width-dispW)/2, offY=(vrect.height-dispH)/2;
+
+    const domX=offX+cx*scale, domY=offY+cy*scale;
+    const g2=laser.getBoundingClientRect();
+    const lx=g2.left-vrect.left+g2.width/2, ly=g2.top-vrect.top+g2.height/2;
+    const dist=Math.sqrt((domX-lx)**2+(domY-ly)**2);
+    return (dist < g2.width/2);
+  }catch(e){ return true; }
+}
+
+/* Gestione lettura singola */
+function processScan(text){
+  if(mode==='list') expected = text; else scanned = text;
+  stopStream(); cameraArea.style.display='none'; updateUI();
+}
+
+/* Stop camera */
+function stopStream(){
+  try{ if(video.srcObject){ video.srcObject.getTracks().forEach(t=>t.stop()); video.srcObject=null; } }catch(e){}
+  status('');
+}
+
+/* LED / Zoom (se supportati) */
+function setupControls(track){
+  btnTorch.disabled=true;
+  try{
+    const caps=track.getCapabilities?.()||{};
+    if('torch' in caps){
+      btnTorch.disabled=false; let on=false;
+      btnTorch.onclick=async()=>{
+        on=!on;
+        try{ await track.applyConstraints({advanced:[{torch:on}]}); status(on?'LED: ON':'LED: OFF'); }
+        catch(e){ status('LED non disponibile'); on=false; }
+      };
+    }
+  }catch(e){}
+
+  btnZoomIn.disabled=true; btnZoomOut.disabled=true;
+  try{
+    const caps=track.getCapabilities?.()||{};
+    if(caps.zoom){
+      let z=track.getSettings().zoom||1, step=caps.zoom.step||0.25;
+      const min=caps.zoom.min||1, max=caps.zoom.max||z||1;
+      btnZoomIn.disabled=false; btnZoomOut.disabled=false;
+      btnZoomIn.onclick=()=>applyZoom(Math.min(max,(z||1)+step));
+      btnZoomOut.onclick=()=>applyZoom(Math.max(min,(z||1)-step));
+      async function applyZoom(nv){
+        try{ await track.applyConstraints({advanced:[{zoom:nv}]}); z=nv; status('Zoom: '+nv.toFixed(2)); }
+        catch(e){}
+      }
+    }
+  }catch(e){}
+}
+
+/* Avvio */
+updateUI();
+</script>
+</body>
+</html>
