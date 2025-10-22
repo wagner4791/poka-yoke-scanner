@@ -292,19 +292,31 @@ async function inviaASheetBatch() {
   const payload = { secret: GS_TOKEN, rows };
 
   try {
+    // ⚠️ Nessun header personalizzato -> niente preflight CORS
     const r = await fetch(GS_ENDPOINT, {
       method: 'POST',
-      headers: { 'Content-Type':'application/json' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
+      redirect: 'follow',
+      cache: 'no-cache',
+      keepalive: true
     });
-    const data = await r.json();
-    if (!r.ok || !data.ok) throw new Error(data.error || ('HTTP '+r.status));
+
+    // Prova a leggere il JSON (se il server risponde correttamente)
+    let data = null;
+    try { data = await r.json(); }
+    catch(e){
+      // fallback: prova a leggere il testo per capire l'errore
+      const t = await r.text().catch(()=> '');
+      throw new Error(t ? ('Risposta non valida: '+t.slice(0,200)) : 'Risposta non valida');
+    }
+
+    if (!r.ok || !data.ok) throw new Error(data && data.error ? data.error : ('HTTP '+r.status));
 
     flashScreen('rgba(22,163,74,.45)'); speak("Picking finalizzato e inviato al foglio.",1,1.05,1); vibrate(80);
     alert(`✅ Inviate ${rows.length} righe al foglio Google.`);
   } catch (err) {
     flashScreen('rgba(220,38,38,.45)'); speak("Errore di invio.",0.9,0.9,1);
-    alert('Errore durante l’invio: '+err.message+'\nControlla rete, URL o token.');
+    alert('Errore durante l’invio: '+(err.message||err)+'\nControlla rete, URL o token.');
   }
 }
 
@@ -470,4 +482,3 @@ updateUI();
 </script>
 </body>
 </html>
-
