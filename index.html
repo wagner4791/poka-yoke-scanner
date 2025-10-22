@@ -283,10 +283,8 @@ async function inviaASheetBatch() {
     return;
   }
  const rows = picks.map(p => ({
-  timestamp: new Date(p.ts).toLocaleString('it-IT', {
-    timeZone: 'Europe/Rome',
-    hour12: false
-  }),
+  // inviamo l'epoch (ms) invece di una stringa
+  timestamp: p.ts.getTime(),
   codice: p.codice,
   quantita: p.qty,
   commessa: p.commessa || commessa.value.trim(),
@@ -485,5 +483,6 @@ updateUI();
 </script>
 </body>
 </html>
+
 
 
