@@ -282,13 +282,13 @@ async function inviaASheetBatch() {
     alert('Nessuna riga raccolta.');
     return;
   }
-  const rows = picks.map(p => ({
-    timestamp: p.ts.toISOString(),
+ const rows = picks.map(p => ({
+    timestamp: p.ts.toLocaleString('it-IT', { timeZone: 'Europe/Rome' }),
     codice: p.codice,
     quantita: p.qty,
-    commessa: p.commessa || (commessa.value.trim()),
-    posizione: p.posizione || (posizione.value.trim())
-  }));
+    commessa: p.commessa || commessa.value.trim(),
+    posizione: p.posizione || posizione.value.trim()
+}));
   const payload = { secret: GS_TOKEN, rows };
 
   try {
@@ -482,3 +482,4 @@ updateUI();
 </script>
 </body>
 </html>
+
