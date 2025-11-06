@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="it">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-<title>Poka-Yoke OFFLINE • Scanner IBRIDO (PIN)</title>
+<title>Poka-Yoke PRO • Scanner IBRIDO (QR + Barcode) • Invio sicuro</title>
 <style>
   :root{--ok:#16a34a;--err:#dc2626;--panel:#0f172a;--fg:#e5e7eb;--muted:#94a3b8}
   html,body{margin:0;height:100%;background:#000;color:#fff;font-family:system-ui,Segoe UI,Roboto,Arial}
@@ -12,7 +13,7 @@
   header h1{margin:0;font-size:18px}
   main{flex:1;display:flex;flex-direction:column;gap:12px;padding:12px}
   .panel{background:var(--panel);border:1px solid #1f2937;border-radius:14px;padding:14px}
-  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
   .btn{flex:1 1 150px;padding:12px 14px;border-radius:12px;border:1px solid #243045;background:#111827;color:#fff;font-size:16px;font-weight:700;cursor:pointer}
   .btn:active{transform:scale(.98)}
   .btn-sm{flex:0 0 auto;font-size:14px;padding:10px 12px}
@@ -50,84 +51,30 @@
   .tbl{width:100%;border-collapse:collapse}
   .tbl th,.tbl td{padding:8px 10px;border-bottom:1px solid #1f2937;font-size:14px}
   .tbl th{position:sticky;top:0;background:#0a0f1d;text-align:left;font-weight:800}
-
-  /* ===== PIN Gate ===== */
-  #pinGate{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.85);z-index:99999}
-  .pinCard{background:#0b1220;border:1px solid #334155;border-radius:16px;padding:18px;min-width:300px;max-width:92vw;box-shadow:0 10px 30px rgba(0,0,0,.6);display:flex;flex-direction:column;gap:10px}
-  .pinTitle{font-size:18px;font-weight:800}
-  .pinInput{font-size:22px;letter-spacing:4px;text-align:center;padding:10px;border-radius:10px;border:1px solid #334155;background:#0a0f1d;color:#fff}
-  .pinGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px}
-  .pinBtn{padding:14px 0;border-radius:12px;border:1px solid #334155;background:#111827;color:#fff;font-weight:800;font-size:18px}
-  .pinRow{display:flex;gap:8px;justify-content:center}
-  .pinMsg{min-height:1em;font-size:12px;color:#cbd5e1;text-align:center}
-  .cooldown{color:#fecaca}
-  .pinRemember{display:flex;align-items:center;gap:8px;justify-content:center;font-size:12px;color:#cbd5e1}
+  #qtyModal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:9999}
+  .modalCard{background:#0b1220;border:1px solid #334155;border-radius:14px;padding:16px;min-width:280px;max-width:90vw;box-shadow:0 10px 30px rgba(0,0,0,.6)}
+  .modalTitle{font-weight:800;margin-bottom:8px}
+  .qtyRow{display:flex;gap:10px;align-items:center;justify-content:center;margin:12px 0}
+  .qtyBtn{padding:10px 14px;border-radius:10px;border:1px solid #334155;background:#111827;color:#fff;font-weight:800;font-size:20px;cursor:pointer}
+  .qtyInput{width:100px;text-align:center;font-size:22px;font-weight:900;padding:8px 10px;border-radius:10px;border:1px solid #334155;background:#0a0f1d;color:#fff}
+  .modalActions{display:flex;gap:10px;justify-content:flex-end;margin-top:8px}
+  #netBadge{margin-left:auto;font-size:12px;padding:4px 8px;border-radius:8px;border:1px solid #334155}
+  #netBadge.online{background:rgba(22,163,74,.12);color:#86efac;border-color:#14532d}
+  #netBadge.offline{background:rgba(220,38,38,.10);color:#fecaca;border-color:#7f1d1d}
 </style>
-<!-- 🔒 Protezione NO-TIME-TRAVEL -->
-<script>
-(function(){
-  try {
-    const KEY = 'poka_last_time';
-    const last = parseInt(localStorage.getItem(KEY) || '0', 10);
-    const now = Date.now();
-
-    // Se l'orario corrente è più vecchio dell'ultimo registrato ⇒ data retrocessa
-    if (now + 60000 < last) {
-      document.body.innerHTML = `
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:#000;color:#fff;font-family:system-ui;text-align:center;padding:20px">
-          <h1 style="color:#ef4444">⚠️ Errore di sistema</h1>
-          <p style="max-width:480px;font-size:18px;line-height:1.4">
-            È stato rilevato un cambio data non valido.<br>
-            Riporta la data e l’ora del dispositivo a quelle corrette<br>
-            e riavvia l’applicazione.
-          </p>
-        </div>`;
-      throw new Error("Data retrocessa: accesso bloccato");
-    }
-
-    // Salva l'ora attuale per il prossimo controllo
-    localStorage.setItem(KEY, now.toString());
-  } catch (e) {
-    console.error("Protezione no-time-travel:", e);
-  }
-})();
-</script>
 <script src="https://unpkg.com/@zxing/library@latest"></script>
 <script src="https://unpkg.com/@zxing/browser@latest"></script>
 </head>
 <body>
-<!-- ====== PIN / Licenza ====== -->
-<div id="pinGate">
-  <div class="pinCard">
-    <div class="pinTitle">🔒 Accesso protetto</div>
-    <input id="pinInput" class="pinInput" type="password" inputmode="numeric" autocomplete="one-time-code" placeholder="PIN" maxlength="8"/>
-    <div class="pinGrid">
-      <button class="pinBtn">1</button><button class="pinBtn">2</button><button class="pinBtn">3</button>
-      <button class="pinBtn">4</button><button class="pinBtn">5</button><button class="pinBtn">6</button>
-      <button class="pinBtn">7</button><button class="pinBtn">8</button><button class="pinBtn">9</button>
-    </div>
-    <div class="pinRow">
-      <button id="pinClear" class="pinBtn" style="flex:1">Cancella</button>
-      <button class="pinBtn" style="flex:1">0</button>
-      <button id="pinOk" class="pinBtn btn-green" style="flex:1">OK</button>
-    </div>
-    <label class="pinRemember"><input id="remember" type="checkbox" /> Ricordami su questo dispositivo (30 giorni)</label>
-    <div id="pinMsg" class="pinMsg"></div>
-  </div>
-</div>
-
-<div class="wrap" aria-hidden="true">
+<div class="wrap">
   <header>
-    <div class="row" style="justify-content:space-between">
-      <h1 style="flex:0 1 auto">Poka-Yoke OFFLINE • Scanner IBRIDO</h1>
-      <div class="row" style="gap:8px">
-        <span id="licenzaInfo" class="small muted"></span>
-        <button id="lockNow" class="btn btn-sm btn-outline">🔒 Blocca ora</button>
-      </div>
+    <div class="row" style="align-items:center;justify-content:space-between">
+      <h1 style="flex:0 1 auto">Poka-Yoke PRO • Scanner IBRIDO</h1>
+      <span id="netBadge" class="offline">Offline</span>
     </div>
   </header>
 
-  <!-- Testata -->
+  <!-- Testata: commessa/posizione + Finalizza -->
   <div class="panel">
     <div class="row">
       <label class="field">
@@ -142,7 +89,7 @@
         <span>Fotocamera</span>
         <select id="cameraSelect" class="input"><option value="">(automatico)</option></select>
       </label>
-      <button id="finalizza" class="btn btn-blue" style="flex:0 0 220px">🧾 Esporta / Condividi CSV</button>
+      <button id="finalizza" class="btn btn-blue" style="flex:0 0 220px">🧾 Finalizza picking</button>
     </div>
     <div class="small" style="margin-top:6px">Compila <b>commessa</b> e <b>posizione</b> prima di iniziare.</div>
   </div>
@@ -167,11 +114,6 @@
         <button id="zoomOut" class="btn btn-sm" disabled>🔍 −</button>
         <label class="small"><input type="checkbox" id="confirm2" checked> Conferma doppia</label>
         <label class="small"><input type="checkbox" id="voice" checked> Annuncio vocale</label>
-        <div class="row" style="gap:8px;flex:0 0 auto">
-          <button id="saveSession" class="btn btn-sm btn-outline">💾 Salva sessione</button>
-          <button id="loadSession" class="btn btn-sm btn-outline">📂 Carica sessione</button>
-          <button id="shareCSV" class="btn btn-sm btn-green">📤 Condividi CSV</button>
-        </div>
         <span id="statusLine"></span>
       </div>
     </div>
@@ -186,12 +128,13 @@
       <div class="small" style="text-align:center;margin-top:6px">Se fatica: usa <b>Zoom</b> o attiva <b>LED</b>.</div>
     </div>
 
+    <!-- Righe raccolte -->
     <div class="panel">
       <div class="row" style="align-items:center;justify-content:space-between">
         <div class="small">Righe raccolte (scheda in tempo reale)</div>
         <div class="row" style="gap:8px;flex:0 0 auto">
-          <button id="scaricaCSV" class="btn btn-sm btn-blue" disabled>⬇️ Scarica CSV</button>
-          <button id="svuota" class="btn btn-sm btn-outline" disabled>🗑️ Svuota</button>
+          <button id="scaricaCSV" class="btn btn-sm btn-blue" disabled>⬇️ Scarica scheda (CSV)</button>
+          <button id="inviaPendenti" class="btn btn-sm btn-green" disabled>⤴️ Invia pendenti</button>
         </div>
       </div>
       <div id="righeBox" style="margin-top:8px">
@@ -200,236 +143,71 @@
           <tbody></tbody>
         </table>
       </div>
-      <div class="small muted" style="margin-top:6px">Dati salvati solo sul dispositivo. Nessun invio in rete.</div>
+      <div class="small muted" style="margin-top:6px">I dati non inviati vengono salvati in locale e inviati automaticamente quando la rete torna disponibile.</div>
     </div>
   </main>
 
-  <footer id="footerNote">Consenti fotocamera • Funziona meglio in Chrome Android (aggiungi alla Home) • Modalità OFFLINE</footer>
+  <footer>Consenti fotocamera • Funziona meglio in Chrome Android (aggiungi alla Home) • Versione PRO</footer>
+</div>
+
+<!-- Modal quantità -->
+<div id="qtyModal">
+  <div class="modalCard">
+    <div class="modalTitle">Inserisci quantità prelevata</div>
+    <div id="qtyInfo" class="small" style="margin-bottom:6px;color:#cbd5e1"></div>
+    <div class="qtyRow">
+      <button id="qtyMinus" class="qtyBtn">−</button>
+      <input id="qtyInput" class="qtyInput" type="number" min="1" step="1" value="1" />
+      <button id="qtyPlus" class="qtyBtn">+</button>
+    </div>
+    <div class="modalActions">
+      <button id="qtyCancel" class="btn btn-sm btn-outline">Annulla</button>
+      <button id="qtyOk" class="btn btn-sm btn-green">Conferma</button>
+    </div>
+  </div>
 </div>
 
 <div id="flash"></div>
 
 <script>
-/* ======= LICENZA (per test: SCADUTA) ======= */
-const LICENSE_OWNER  = "Demo Cliente";
-const LICENSE_EXPIRY = "2025-12-06"; // <-- SCADUTA: vedrai il blocco subito
+/* ================== CONFIG ==================
+   INCOLLA QUI il TUO endpoint (/exec) e il TOKEN identico a quello nello Script */
+const GS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzqXsuAvs6PB0NOnMl2d6cDZXCQvl-reZL1lHmiLTCRo3xSkAc_lIwCYFPx1GQC1UE/exec';
+const GS_TOKEN    = 'TOKEN_PICKING_2025';
+/* ============================================ */
 
-/* ===== PIN CONFIG ===== */
-const PIN_MODE   = 'fixed';
-const PIN_HASH   = 'srLxBNMsY4kD4VGpsg1uJ7QdjAyEz4RYc4+Dyi8d10Q='; // SHA-256 base64 del PIN "2025"
-const DAILY_SECRET = 'CAMBIA_QUESTA_CHIAVE_LUNGA';
-
-// Auto-lock & Remember
-const AUTOLOCK_MS = 5 * 60 * 1000;
-const REMEMBER_DAYS = 30;
-const LS_AUTH = 'pokaYokeAuth_v2';
-
-/* ===== NO TIME TRAVEL =====
-   - Salva "ultimo tempo visto" in localStorage.
-   - Se l'orologio va INDIETRO oltre 2 minuti rispetto a quel valore, blocca. */
-const LS_LAST_SEEN = 'pokaLastSeen_v1';
-const TRAVEL_TOLERANCE_MS = 2 * 60 * 1000; // 2 minuti
-
-function hardBlock(message){
-  document.body.innerHTML = `
-    <div style="text-align:center;margin-top:35vh;color:#f33;font-family:system-ui;padding:0 16px">
-      <h2>⛔ Accesso bloccato</h2>
-      <p>${message||'Errore di licenza o orologio di sistema non valido.'}</p>
-    </div>`;
-  throw new Error(message||'Blocked');
+/* Stato rete */
+const netBadge = document.getElementById('netBadge');
+function setNetBadge() {
+  const on = navigator.onLine;
+  netBadge.textContent = on ? 'Online' : 'Offline';
+  netBadge.className = on ? 'online' : 'offline';
+  document.getElementById('inviaPendenti').disabled = !getQueue().length || !on;
 }
+window.addEventListener('online', setNetBadge);
+window.addEventListener('offline', setNetBadge);
+setNetBadge();
 
-function checkLicenseAndTime(){
-  // 1) Licenza
-  if(LICENSE_EXPIRY){
-    const expiry = new Date(LICENSE_EXPIRY + "T23:59:59Z").getTime();
-    const nowUTC = Date.now();
-    if(nowUTC > expiry){
-      hardBlock('Licenza scaduta. Contatta lo sviluppatore per il rinnovo.');
-    }
-  }
-  // 2) No Time Travel
-  try{
-    const lastRaw = localStorage.getItem(LS_LAST_SEEN);
-    const now = Date.now();
-    if(lastRaw){
-      const last = parseInt(lastRaw,10);
-      if(isFinite(last) && (now + TRAVEL_TOLERANCE_MS) < last){
-        hardBlock('Data/ora di sistema non valida (spostata indietro).');
-      }
-    }
-    // aggiorna last seen
-    localStorage.setItem(LS_LAST_SEEN, String(now));
-  }catch(_){}
-}
-
-// Esegui controllo SUBITO (prima di qualsiasi UI)
-checkLicenseAndTime();
-
-/* ====== AUTENTICAZIONE PIN & LICENZA INFO ====== */
-const pinGate = document.getElementById('pinGate');
-const pinInput = document.getElementById('pinInput');
-const pinMsg = document.getElementById('pinMsg');
-const pinButtons = Array.from(document.querySelectorAll('.pinBtn'));
-const pinClear = document.getElementById('pinClear');
-const pinOk = document.getElementById('pinOk');
-const remember = document.getElementById('remember');
-let pinAttempts = 0;
-let pinLockedUntil = 0;
-let _autolockTimer = null;
-
-(function showLicenseInfo(){
-  const f = document.getElementById('footerNote');
-  const top = document.getElementById('licenzaInfo');
-  let extra = [];
-  if(LICENSE_OWNER) extra.push(`Licenza: ${LICENSE_OWNER}`);
-  if(LICENSE_EXPIRY){
-    const d = new Date(LICENSE_EXPIRY+"T23:59:59Z");
-    extra.push(`Scadenza: ${d.toLocaleDateString()}`);
-  }
-  const txt = extra.join(' • ');
-  if(txt){ top.textContent = txt; f.innerHTML += ` • ${txt}`; }
-})();
-
-function resetAutolock(){
-  clearTimeout(_autolockTimer);
-  _autolockTimer = setTimeout(()=> lockApp('Sessione scaduta. Inserisci di nuovo il PIN.'), AUTOLOCK_MS);
-}
-['click','touchstart','keydown'].forEach(ev=>{
-  document.addEventListener(ev, ()=>{ if(pinGate.style.display==='none') resetAutolock(); }, {passive:true});
-});
-document.getElementById('lockNow').addEventListener('click', ()=> lockApp('Sessione bloccata.'));
-
-pinButtons.forEach(b=>{
-  b.addEventListener('click', ()=>{
-    if(b === pinOk) return;
-    if(b === pinClear) return;
-    pinInput.value = (pinInput.value || '') + b.textContent.trim();
-  });
-});
-pinClear.addEventListener('click', ()=> pinInput.value='');
-pinOk.addEventListener('click', checkPIN);
-
-async function checkPIN(){
-  const now = Date.now();
-  if (now < pinLockedUntil){
-    const left = Math.ceil((pinLockedUntil - now)/1000);
-    pinMsg.innerHTML = `⏳ Attendi ${left}s per riprovare.`;
-    pinMsg.classList.add('cooldown');
-    return;
-  }
-  pinMsg.classList.remove('cooldown');
-
-  const entered = (pinInput.value||'').trim();
-  if(!entered){ pinMsg.textContent = 'Inserisci il PIN'; return; }
-
-  let valid = false;
-  if(PIN_MODE === 'fixed'){
-    const h = await sha256B64(entered);
-    valid = (h === PIN_HASH);
-  }else{
-    const expected = await dailyPin();
-    valid = (entered === expected);
-  }
-
-  if(valid){
-    // ulteriore check anti-time-travel al momento dello sblocco
-    checkLicenseAndTime();
-    unlockApp();
-    if(remember.checked){
-      const until = Date.now() + REMEMBER_DAYS*24*60*60*1000;
-      const token = { hash: PIN_HASH, until };
-      localStorage.setItem(LS_AUTH, JSON.stringify(token));
-    }else{
-      localStorage.removeItem(LS_AUTH);
-    }
-  }else{
-    pinAttempts++;
-    if(pinAttempts >= 5){
-      pinLockedUntil = Date.now() + 60*1000;
-      pinMsg.textContent = 'Troppi tentativi. Attendi 60s.';
-      pinMsg.classList.add('cooldown');
-      pinAttempts = 0;
-    }else{
-      pinMsg.textContent = `PIN errato. Tentativi: ${pinAttempts}/5`;
-    }
-    pinInput.value='';
-  }
-}
-
-function tryAutoLogin(){
-  try{
-    const raw = localStorage.getItem(LS_AUTH);
-    if(!raw) return false;
-    const tok = JSON.parse(raw);
-    // controlla licenza e time travel anche in auto-login
-    checkLicenseAndTime();
-    if(tok.hash === PIN_HASH && Date.now() < (tok.until||0)){
-      unlockApp();
-      return true;
-    }
-  }catch(_){}
-  return false;
-}
-
-function lockApp(msg){
-  document.querySelector('.wrap').setAttribute('aria-hidden','true');
-  pinGate.style.display = 'flex';
-  pinMsg.textContent = msg || '';
-  pinInput.value='';
-}
-function unlockApp(){
-  pinGate.style.display = 'none';
-  document.querySelector('.wrap').removeAttribute('aria-hidden');
-  pinMsg.textContent='';
-  pinAttempts = 0;
-  pinLockedUntil = 0;
-  // aggiorna last seen ad ogni sblocco
-  try{ localStorage.setItem(LS_LAST_SEEN, String(Date.now())); }catch(_){}
-  resetAutolock();
-}
-
-/* SHA-256 → base64 */
-async function sha256B64(str){
-  const enc = new TextEncoder();
-  const buf = await crypto.subtle.digest('SHA-256', enc.encode(str));
-  let bin = ''; const bytes = new Uint8Array(buf);
-  for(let i=0;i<bytes.length;i++) bin += String.fromCharCode(bytes[i]);
-  return btoa(bin);
-}
-
-/* PIN giornaliero */
-async function dailyPin(){
-  const d = new Date();
-  const ymd = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
-  const enc = new TextEncoder();
-  const key = await crypto.subtle.importKey('raw', enc.encode('CAMBIA_QUESTA_CHIAVE_LUNGA'), {name:'HMAC', hash:'SHA-256'}, false, ['sign']);
-  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(ymd));
-  const view = new DataView(sig);
-  const n = (view.getUint32(0, false) % 10000);
-  return String(n).padStart(4,'0');
-}
-
-/* Avvio bloccato o auto-login */
-if(!tryAutoLogin()){ lockApp(); }
-
-/* ======= App scanner OFFLINE (funzioni principali) ======= */
+/* Risveglia la voce al primo tocco */
 document.addEventListener('click',()=>{speechSynthesis.getVoices();},{once:true});
+
+/* Stato app */
 let expected=null, scanned=null, mode=null, stream, track, confirmBuf=[], lastVal=null;
 let picks=[]; // {ts, codice, qty, commessa, posizione}
 let pendingOK=null;
 let lastScanTs=0;
 let cameraIdleTimer=null;
 
+/* Elementi utili */
 const el=id=>document.getElementById(id);
 const video=el('video'), overlay=el('overlay'), guide=el('guide'), laser=el('laser');
 const badge=el('badge'), resultText=el('resultText'), codes=el('codes');
 const btnTorch=el('torch'), btnZoomIn=el('zoomIn'), btnZoomOut=el('zoomOut');
 const confirm2=el('confirm2'), voice=el('voice'), cameraArea=el('cameraArea'), statusLine=el('statusLine'), flash=el('flash');
 const commessa=el('commessa'), posizione=el('posizione');
-const scaricaCSV=el('scaricaCSV'), finalizza=el('finalizza'), shareCSV=el('shareCSV');
-const saveSession=el('saveSession'), loadSession=el('loadSession'), svuota=el('svuota');
-const cameraSelect=el('cameraSelect');
+const qtyModal=el('qtyModal'), qtyInput=el('qtyInput'), qtyMinus=el('qtyMinus'), qtyPlus=el('qtyPlus'), qtyOk=el('qtyOk'), qtyCancel=el('qtyCancel'), qtyInfo=el('qtyInfo');
+const scaricaCSV=el('scaricaCSV'), finalizza=el('finalizza');
+const cameraSelect=el('cameraSelect'), inviaPendenti=el('inviaPendenti');
 
 /* Audio + voce */
 let actx;
@@ -443,7 +221,7 @@ function setBadge(t,cls){badge.textContent=t;badge.className='badge '+(cls==='ok
 function norm(s){return s?String(s).trim().toUpperCase():s}
 function status(m){statusLine.textContent=m||''}
 function resetConfirm(){confirmBuf=[];lastVal=null;}
-function sanitize(s,max=64){return String(s||'').replace(/[^\w\-\. \/]/g,'').slice(0,max)}
+function sanitize(s,max=64){return String(s||'').replace(/[^\w\-\. \/]/g,'').slice(0,max)} // lettere/numeri/underscore/dash/dot/spazio/slash
 
 /* UI codici grandi */
 function updateUI(){
@@ -464,7 +242,7 @@ function updateUI(){
       setBadge('✅ CORRETTO','ok');
       resultText.innerHTML = 'Match perfetto!';
       flashScreen('rgba(22,163,74,.5)'); okSound(); speak("Codice corretto",1,1.1,1); vibrate(60);
-      pendingOK = expected;
+      pendingOK = expected; // o scanned: sono uguali
       openQtyModal(pendingOK);
     } else {
       setBadge('❌ ERRATO','err');
@@ -478,15 +256,34 @@ function updateUI(){
   }
 }
 
-/* Modal quantità minimale */
+/* Modal quantità */
 function openQtyModal(code){
-  const qty = prompt(`Quantità per ${code}`, '1');
-  const v = Math.max(1, parseInt(qty||'1',10));
-  const ts = new Date();
-  picks.push({ts, codice: sanitize(code,128), qty:v, commessa: sanitize(commessa.value,64), posizione: sanitize(posizione.value,64)});
-  renderPicks();
-  pendingOK=null; scanned=null; updateUI();
+  qtyInfo.innerHTML = `Codice: <b>${code}</b>`;
+  qtyInput.value = '1';
+  qtyModal.style.display = 'flex';
+  setTimeout(()=>qtyInput.focus(),50);
 }
+function closeQtyModal(){ qtyModal.style.display='none'; }
+qtyMinus.onclick = ()=>{ const v=Math.max(1, parseInt(qtyInput.value||'1',10)-1); qtyInput.value=v; };
+qtyPlus.onclick  = ()=>{ const v=Math.max(1, parseInt(qtyInput.value||'1',10)+1); qtyInput.value=v; };
+qtyCancel.onclick= ()=>{ closeQtyModal(); };
+qtyOk.onclick    = ()=>{
+  const qty = Math.max(1, parseInt(qtyInput.value||'1',10));
+  if(!pendingOK){ closeQtyModal(); return; }
+  const ts = new Date();
+  picks.push({
+    ts,
+    codice: sanitize(pendingOK,128),
+    qty,
+    commessa: sanitize(commessa.value,64),
+    posizione: sanitize(posizione.value,64)
+  });
+  renderPicks();
+  pendingOK = null;
+  scanned = null;
+  updateUI();
+  closeQtyModal();
+};
 
 /* Tabella righe raccolte */
 function renderPicks(){
@@ -495,81 +292,103 @@ function renderPicks(){
     const hh = p.ts.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
     return `<tr><td>${hh}</td><td>${p.codice}</td><td>${p.qty}</td><td>${p.commessa||'-'}</td><td>${p.posizione||'-'}</td></tr>`;
   }).join('');
-  const has = picks.length>0;
-  document.getElementById('scaricaCSV').disabled = !has;
-  document.getElementById('svuota').disabled = !has;
+  scaricaCSV.disabled = picks.length===0;
 }
 
-/* CSV */
-function toCSV(){
-  const head = 'timestamp_ms,iso,codice,quantita,commessa,posizione\n';
-  const body = picks.map(p=>{
-    return [p.ts.getTime(), p.ts.toISOString(), p.codice, p.qty, p.commessa||'', p.posizione||'']
-      .map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',');
-  }).join('\n');
-  return head+body;
-}
+/* CSV locale */
 function downloadCSV(){
   if(!picks.length) return;
-  const csv = toCSV();
-  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const head = 'timestamp_ms,codice,quantita,commessa,posizione\n';
+  const body = picks.map(p=>{
+    return [p.ts.getTime(),p.codice,p.qty,p.commessa||'',p.posizione||'']
+      .map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',');
+  }).join('\n');
+  const blob = new Blob([head+body], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url; a.download = `scheda_picking_${(commessa.value||'commessa')}.csv`; a.click();
   URL.revokeObjectURL(url);
 }
-async function shareCSVFile(){
-  try{
-    if(!('share' in navigator) || !picks.length) return downloadCSV();
-    const csv = toCSV();
-    const file = new File([csv], `scheda_picking_${(commessa.value||'commessa')}.csv`, {type:'text/csv'});
-    await navigator.share({ files: [file], title: 'Scheda picking', text: 'Dati picking esportati' });
-  }catch(_){ downloadCSV(); }
+
+/* ==== Offline Queue (localStorage) ==== */
+const QKEY='poka_queue_v1';
+function getQueue(){ try{ return JSON.parse(localStorage.getItem(QKEY)||'[]'); }catch(_){ return []; } }
+function setQueue(arr){ localStorage.setItem(QKEY, JSON.stringify(arr||[])); }
+async function flushQueue(){
+  const q=getQueue(); if(!q.length || !navigator.onLine) return;
+  // invia a batch di 50
+  while(q.length && navigator.onLine){
+    const chunk = q.splice(0,50);
+    const ok = await postRows(chunk).catch(()=>false);
+    if(!ok){ // rimetti e stop
+      setQueue(chunk.concat(q));
+      break;
+    }
+    setQueue(q);
+  }
+  inviaPendenti.disabled = !getQueue().length || !navigator.onLine;
 }
 
-/* Sessione locale */
-const SKEY='poka_session_v1';
-function saveLocal(){
-  const data = {
-    when: Date.now(),
-    commessa: sanitize(commessa.value,64),
-    posizione: sanitize(posizione.value,64),
-    picks: picks.map(p=>({ts:p.ts.getTime(), codice:p.codice, qty:p.qty, commessa:p.commessa, posizione:p.posizione}))
-  };
-  localStorage.setItem(SKEY, JSON.stringify(data));
-  alert('✅ Sessione salvata sul dispositivo.');
-}
-function loadLocal(){
-  try{
-    const raw = localStorage.getItem(SKEY); if(!raw){ alert('Nessuna sessione salvata.'); return; }
-    const data = JSON.parse(raw);
-    commessa.value = data.commessa||'';
-    posizione.value = data.posizione||'';
-    picks = (data.picks||[]).map(x=>({ts:new Date(x.ts), codice:x.codice, qty:x.qty, commessa:x.commessa, posizione:x.posizione}));
-    renderPicks();
-    alert('📂 Sessione caricata.');
-  }catch(e){ alert('Errore nel caricamento sessione.'); }
-}
-function clearAll(){
-  if(!picks.length) return;
-  if(!confirm('Sicuro di svuotare la sessione corrente?')) return;
-  picks = [];
-  renderPicks();
-  updateUI();
+/* Invio batch al Google Sheet */
+async function postRows(rows){
+  const payload = { secret: GS_TOKEN, rows };
+  const r = await fetch(GS_ENDPOINT, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    redirect: 'follow',
+    cache: 'no-cache',
+    keepalive: true
+  });
+  let data=null;
+  try{ data=await r.json(); }catch(e){
+    const t=await r.text().catch(()=> ''); throw new Error(t||('HTTP '+r.status));
+  }
+  if (!r.ok || !data.ok) throw new Error(data.error || ('HTTP '+r.status));
+  return true;
 }
 
-/* Pulsanti */
-document.getElementById('scanList').onclick=()=>startScan('list');
-document.getElementById('scanItem').onclick=()=>startScan('item');
-document.getElementById('reset').onclick=()=>{expected=null;scanned=null;pendingOK=null;updateUI();};
-document.getElementById('scaricaCSV').onclick = downloadCSV;
-document.getElementById('finalizza').onclick = ()=>shareCSVFile();
-document.getElementById('shareCSV').onclick  = ()=>shareCSVFile();
-document.getElementById('saveSession').onclick = ()=>saveLocal();
-document.getElementById('loadSession').onclick = ()=>loadLocal();
-document.getElementById('svuota').onclick = ()=>clearAll();
+async function inviaASheetBatch() {
+  if (!picks.length) {
+    alert('Nessuna riga raccolta.');
+    return;
+  }
+  const rows = picks.map(p => ({
+    timestamp: p.ts.getTime(),
+    codice: p.codice,
+    quantita: p.qty,
+    commessa: p.commessa || sanitize(commessa.value,64),
+    posizione: p.posizione || sanitize(posizione.value,64)
+  }));
 
-/* Elenco fotocamere */
+  try {
+    if(!navigator.onLine) throw new Error('offline');
+    await postRows(rows);
+    flashScreen('rgba(22,163,74,.45)'); speak("Picking finalizzato e inviato al foglio.",1,1.05,1); vibrate(80);
+    alert(`✅ Inviate ${rows.length} righe al foglio Google.`);
+  } catch (err) {
+    // salva in coda offline
+    const q = getQueue();
+    setQueue(q.concat(rows));
+    inviaPendenti.disabled = !navigator.onLine ? true : false;
+    flashScreen('rgba(220,38,38,.45)'); speak("Rete assente: dati messi in coda.",0.95,0.95,1); vibrate([80,60,80]);
+    alert('⚠️ Rete assente o errore invio.\nLe righe sono state messe in coda offline e verranno inviate appena la rete torna disponibile.');
+  }
+}
+
+/* Pulsanti base */
+el('scanList').onclick=()=>startScan('list');
+el('scanItem').onclick=()=>startScan('item');
+el('reset').onclick=()=>{expected=null;scanned=null;pendingOK=null;updateUI();};
+scaricaCSV.onclick = downloadCSV;
+finalizza.onclick = async ()=>{
+  if(!picks.length){ alert('Nessuna riga raccolta.'); return; }
+  downloadCSV();            // opzionale
+  await inviaASheetBatch(); // invio o coda offline
+  flushQueue();             // prova a svuotare eventuali pendenti
+};
+inviaPendenti.onclick=()=>flushQueue();
+
+/* Camera list */
 async function populateCameras(){
   try{
     const devices = await navigator.mediaDevices.enumerateDevices();
@@ -580,24 +399,28 @@ async function populateCameras(){
 }
 if(navigator.mediaDevices?.enumerateDevices){ populateCameras(); }
 
-/* Scansione: Detector → ZXing */
+/* Avvio scansione: Detector → ZXing */
 async function startScan(which){
   const cm = sanitize(commessa.value,64), ps = sanitize(posizione.value,64);
-  if(!cm || !ps){ alert('Inserisci Numero commessa e Posizione prima di scansionare.'); return; }
+  if(!cm || !ps){
+    alert('Inserisci Numero commessa e Posizione prima di scansionare.');
+    return;
+  }
   commessa.value = cm; posizione.value = ps;
 
   mode=which; cameraArea.style.display='block'; resetConfirm(); status('Avvio camera…');
 
   clearTimeout(cameraIdleTimer);
-  cameraIdleTimer = setTimeout(()=>{ stopStream(); cameraArea.style.display='none'; }, 60_000);
+  cameraIdleTimer = setTimeout(()=>{ stopStream(); cameraArea.style.display='none'; }, 60_000); // auto stop dopo 60s
 
   if('BarcodeDetector' in window){
-    try{ await startDetectorHybrid(); return; } catch(e){}
+    try{ await startDetectorHybrid(); return; }
+    catch(e){ /* fallback giù */ }
   }
   await startZXingHybrid();
 }
 
-/* Debounce */
+/* Debounce lettura (blocca multipli in < 600ms) */
 function canAccept(){
   const now = performance.now();
   if(now - lastScanTs < 600) return false;
@@ -605,7 +428,7 @@ function canAccept(){
   return true;
 }
 
-/* Detector nativo */
+/* Detector nativo (ibrido QR + 1D) */
 async function startDetectorHybrid(){
   const constraints={video:{facingMode:"environment",width:{ideal:1280},height:{ideal:720},focusMode:"continuous"}};
   const chosen = cameraSelect.value;
@@ -637,6 +460,7 @@ async function startDetectorHybrid(){
         const lx=g2.left-v.left+g2.width/2, ly=g2.top-v.top+g2.height/2;
         const dist=Math.sqrt((domX-lx)**2+(domY-ly)**2);
         const radius=g2.width/2;
+
         if(inGuide && dist<radius){ accepted=c.rawValue; break; }
       }
 
@@ -682,15 +506,18 @@ async function startZXingHybrid(){
   loop();
 }
 
+/* ROI per ZXing */
 function pointInGuideZXing(result,vidEl){
   try{
     const pts=result.resultPoints||[]; if(pts.length===0) return true;
     let cx=0,cy=0; for(const p of pts){ cx+=p.x; cy+=p.y; } cx/=pts.length; cy/=pts.length;
+
     const vrect=vidEl.getBoundingClientRect();
     const vw=vidEl.videoWidth, vh=vidEl.videoHeight;
     const scale=Math.min(vrect.width/vw, vrect.height/vh);
     const dispW=vw*scale, dispH=vh*scale;
     const offX=(vrect.width-dispW)/2, offY=(vrect.height-dispH)/2;
+
     const domX=offX+cx*scale, domY=offY+cy*scale;
     const g2=laser.getBoundingClientRect();
     const lx=g2.left-vrect.left+g2.width/2, ly=g2.top-vrect.top+g2.height/2;
@@ -716,7 +543,7 @@ function stopStream(){
   clearTimeout(cameraIdleTimer); cameraIdleTimer=null;
 }
 
-/* LED / Zoom */
+/* LED / Zoom (se supportati) */
 function setupControls(track){
   btnTorch.disabled=true;
   try{
@@ -748,40 +575,11 @@ function setupControls(track){
   }catch(e){}
 }
 
-/* Utilità */
-function status(m){ document.getElementById('statusLine').textContent = m||''; }
-function updateUI(){
-  const same = expected && scanned && (norm(expected) === norm(scanned));
-  const stateClass = same ? 'ok' : (expected && scanned ? 'err' : '');
-  const box = (label, val, cls) => `
-    <div class="codeBox ${cls||''}">
-      <div class="codeLabel">${label}</div>
-      <div class="codeValue ${cls||''}">${val ? val : '-'}</div>
-    </div>`;
-  document.getElementById('codes').innerHTML = box('LISTA', expected || '', same ? 'ok' : '') +
-                                               box('PEZZO', scanned  || '', stateClass);
-  if (expected && scanned){
-    if (same){
-      document.getElementById('badge').textContent='✅ CORRETTO';
-      document.getElementById('badge').className='badge ok';
-      document.getElementById('resultText').innerHTML='Match perfetto!';
-      flashScreen('rgba(22,163,74,.5)'); okSound(); speak("Codice corretto",1,1.1,1); vibrate(60);
-      pendingOK = expected;
-      openQtyModal(pendingOK);
-    } else {
-      document.getElementById('badge').textContent='❌ ERRATO';
-      document.getElementById('badge').className='badge err';
-      document.getElementById('resultText').innerHTML='Codice diverso!';
-      flashScreen('rgba(220,38,38,.55)'); errSound(); speak("Errore, codice diverso",0.9,0.8,1); vibrate([60,60,180]);
-      pendingOK=null;
-    }
-  } else {
-    document.getElementById('badge').textContent='Pronto';
-    document.getElementById('badge').className='badge';
-    document.getElementById('resultText').innerHTML='Scansiona prima la <b>LISTA</b>, poi il <b>PEZZO</b>';
-  }
-}
+/* Avvio */
 updateUI();
+
+/* flush automatico pendenti quando torna la rete */
+window.addEventListener('online', ()=>flushQueue());
 </script>
 </body>
 </html>
