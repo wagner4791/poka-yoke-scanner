@@ -3,500 +3,436 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-<title>Poka-Yoke PRO • Scanner IBRIDO</title>
-
-<!-- ZXing fallback -->
-<script src="https://unpkg.com/@zxing/library@latest"></script>
-<script src="https://unpkg.com/@zxing/browser@latest"></script>
-
+<title>Poka-Yoke PRO • Scanner IBRIDO (QR + Barcode)</title>
 <style>
-  :root{
-    --bg:#0F172A;        /* sfondo app (blu notte) */
-    --panel:#16223A;     /* pannelli */
-    --border:#273449;    /* bordi */
-    --text:#E6EDF7;      /* testo primario */
-    --muted:#9FB1CB;     /* testo secondario */
-    --accent:#38BDF8;    /* azioni */
-    --ok:#22C55E;        /* successo */
-    --err:#EF4444;       /* errore */
-    --warn:#F59E0B;      /* offline */
-  }
-
-  *{box-sizing:border-box}
-  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:system-ui,Inter,Segoe UI,Roboto,Arial}
-  .app{min-height:100%;display:flex;flex-direction:column}
-
-  /* Header + tabs */
-  header{padding:12px 16px;border-bottom:1px solid var(--border);background:#0B1325}
-  .topbar{display:flex;align-items:center;gap:10px;justify-content:space-between}
-  .brand{font-weight:800}
-  #netBadge{font-size:12px;padding:4px 8px;border-radius:8px;border:1px solid var(--border)}
-  #netBadge.online{background:rgba(34,197,94,.12);color:#86efac;border-color:#14532d}
-  #netBadge.offline{background:rgba(245,158,11,.12);color:#FCD34D;border-color:#B45309}
-
-  .tabs{display:flex;gap:8px;padding:10px 12px;border-bottom:1px solid var(--border);background:#0E1A32}
-  .tab{padding:10px 14px;border-radius:999px;border:1px solid var(--border);color:var(--muted);cursor:pointer;font-weight:700}
-  .tab.active{background:var(--accent);border-color:var(--accent);color:#05263A}
-
-  main{flex:1;display:flex;flex-direction:column}
-  .view{display:none;padding:14px}
-  .view.active{display:block}
-
-  .panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px}
-
-  /* Inputs / buttons */
-  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-  label.field{display:flex;flex-direction:column;gap:6px;flex:1 1 220px;min-width:200px}
-  label.field span{font-size:12px;color:var(--muted)}
-  .input, select{background:#0d182f;border:1px solid var(--border);border-radius:10px;color:var(--text);padding:10px 12px;font-size:16px}
-  .btn{padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:#11203d;color:var(--text);font-weight:800;cursor:pointer}
+  :root{--ok:#16a34a;--err:#dc2626;--panel:#0f172a;--fg:#e5e7eb;--muted:#94a3b8}
+  html,body{margin:0;height:100%;background:#000;color:#fff;font-family:system-ui,Segoe UI,Roboto,Arial}
+  .wrap{min-height:100%;display:flex;flex-direction:column}
+  header{padding:12px 16px;background:#0a0f1d;border-bottom:1px solid #1f2937}
+  header h1{margin:0;font-size:18px}
+  main{flex:1;display:flex;flex-direction:column;gap:12px;padding:12px}
+  .panel{background:var(--panel);border:1px solid #1f2937;border-radius:14px;padding:14px}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  .btn{flex:1 1 150px;padding:12px 14px;border-radius:12px;border:1px solid #243045;background:#111827;color:#fff;font-size:16px;font-weight:700;cursor:pointer}
   .btn:active{transform:scale(.98)}
-  .btn-primary{background:var(--accent);border-color:var(--accent);color:#05263A}
-  .btn-ok{background:#0f2a1a;border-color:#14532d}
-  .btn-outline{background:#0d182f}
-
-  /* Scanner status */
-  .status{display:flex;flex-direction:column;gap:8px;align-items:center;text-align:center}
-  .badge{display:inline-block;padding:6px 10px;border-radius:999px;font-weight:800;border:1px solid var(--border)}
-  .badge.ok{background:rgba(34,197,94,.15);color:#86efac;border-color:#14532d}
-  .badge.err{background:rgba(239,68,68,.15);color:#fecaca;border-color:#7f1d1d}
-
-  #codes{display:flex;flex-direction:column;gap:10px;align-items:stretch;margin-top:4px;width:100%;max-width:680px}
-  .codeBox{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:#0b162c}
-  .codeLabel{font-size:13px;color:var(--muted);font-weight:800}
-  .codeValue{flex:1;text-align:right;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-weight:900;letter-spacing:.5px;font-size:clamp(22px,3.6vh,40px);color:var(--text);word-break:break-all}
-  .codeBox.ok{border-color:#14532d;background:rgba(34,197,94,.10)}
-  .codeBox.err{border-color:#7f1d1d;background:rgba(239,68,68,.08)}
+  .btn-sm{flex:0 0 auto;font-size:14px;padding:10px 12px}
+  .btn-blue{background:#1e293b;border-color:#334155}
+  .btn-green{background:#14532d;border-color:#14532d}
+  .btn-outline{background:#0b1220;border-color:#334155}
+  .status{display:flex;flex-direction:column;gap:6px;align-items:center;text-align:center}
+  #resultText{font-size:20px;margin:4px 0 2px}
+  #codes{display:flex;flex-direction:column;gap:10px;align-items:stretch;margin-top:4px}
+  .codeBox{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-radius:12px;border:1px solid #334155;background:#0b1220}
+  .codeLabel{font-size:14px;color:#9ca3af;font-weight:700}
+  .codeValue{flex:1;text-align:right;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-weight:900;letter-spacing:.5px;font-size:clamp(22px,3.8vh,40px);color:var(--fg);word-break:break-all}
+  .codeBox.ok{border-color:#14532d;background:rgba(22,163,74,.12)}
+  .codeBox.err{border-color:#7f1d1d;background:rgba(220,38,38,.10)}
   .codeValue.ok{color:#86efac}
   .codeValue.err{color:#fecaca}
-
-  /* Righe raccolte */
-  #righeBox{max-height:50vh;overflow:auto;border:1px solid var(--border);border-radius:10px}
-  table{width:100%;border-collapse:collapse}
-  th,td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:14px}
-  th{position:sticky;top:0;background:#0f1b35;text-align:left;font-weight:800}
-  .countPill{margin-left:8px;font-size:12px;padding:3px 8px;border-radius:10px;background:#0d2230;border:1px solid var(--border);color:var(--muted)}
-
-  /* Fullscreen camera overlay */
-  #camFS{position:fixed;inset:0;display:none;background:#000;z-index:9999}
-  #camFS.active{display:block}
-  .camTop{position:absolute;top:0;left:0;right:0;height:56px;display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:linear-gradient(to bottom, rgba(0,0,0,.65), rgba(0,0,0,.0))}
-  .camBtn{background:rgba(0,0,0,.45);color:#fff;border:1px solid rgba(255,255,255,.2);padding:8px 12px;border-radius:10px;font-weight:800}
-  .camWrap{position:absolute;inset:0}
+  .badge{display:inline-block;padding:6px 10px;border-radius:999px;font-weight:800;border:1px solid #374151}
+  .ok{background:rgba(22,163,74,.15);color:#86efac;border-color:#14532d}
+  .err{background:rgba(220,38,38,.15);color:#fecaca;border-color:#7f1d1d}
+  .muted{color:var(--muted)}
+  #cameraArea{display:none}
+  #preview{position:relative;width:100%;max-width:520px;height:62vh;margin:auto;border-radius:12px;overflow:hidden;background:#000}
   #video{position:absolute;inset:0;object-fit:cover;width:100%;height:100%}
   #overlay{position:absolute;inset:0;pointer-events:none}
-  #guide{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:34%;height:34%;border:3px solid rgba(255,255,255,.95);border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.35) inset;pointer-events:none}
-  #laser{position:absolute;left:50%;top:50%;width:54px;height:54px;border:2px solid rgba(255,60,60,.9);border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 12px rgba(255,60,60,.85);pointer-events:none}
-
-  /* Modale quantità */
-  #qtyModal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:10000}
-  .modalCard{background:#0b162c;border:1px solid var(--border);border-radius:14px;padding:16px;min-width:280px;max-width:92vw;box-shadow:0 10px 30px rgba(0,0,0,.6)}
+  #guide{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:30%;height:30%;border:3px solid rgba(255,255,255,.95);border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.4) inset;pointer-events:none}
+  #laser{position:absolute;left:50%;top:50%;width:50px;height:50px;border:2px solid rgba(255,50,50,.85);border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 12px rgba(255,60,60,.85);pointer-events:none}
+  #flash{position:fixed;inset:0;pointer-events:none;opacity:0;transition:opacity .18s}
+  footer{padding:10px 16px;color:#94a3b8;font-size:12px;text-align:center;border-top:1px solid #1f2937}
+  .small{font-size:12px;color:#9ca3af}
+  #statusLine{font-size:12px;color:#cbd5e1;text-align:center;margin-top:6px;min-height:1em}
+  .input,select{background:#0b1220;border:1px solid #243045;border-radius:10px;color:#e5e7eb;padding:10px 12px;font-size:16px;flex:1 1 180px}
+  .input::placeholder{color:#64748b}
+  label.field{display:flex;flex-direction:column;gap:6px;flex:1 1 180px}
+  label.field span{font-size:12px;color:#9ca3af}
+  #righeBox{max-height:28vh;overflow:auto;border:1px solid #1f2937;border-radius:10px}
+  .tbl{width:100%;border-collapse:collapse}
+  .tbl th,.tbl td{padding:8px 10px;border-bottom:1px solid #1f2937;font-size:14px}
+  .tbl th{position:sticky;top:0;background:#0a0f1d;text-align:left;font-weight:800}
+  #qtyModal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:9999}
+  .modalCard{background:#0b1220;border:1px solid #334155;border-radius:14px;padding:16px;min-width:280px;max-width:90vw;box-shadow:0 10px 30px rgba(0,0,0,.6)}
   .modalTitle{font-weight:800;margin-bottom:8px}
   .qtyRow{display:flex;gap:10px;align-items:center;justify-content:center;margin:12px 0}
-  .qtyBtn{padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:#0f203c;color:var(--text);font-weight:800;font-size:20px;cursor:pointer}
-  .qtyInput{width:110px;text-align:center;font-size:22px;font-weight:900;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:#0f1b35;color:var(--text)}
+  .qtyBtn{padding:10px 14px;border-radius:10px;border:1px solid #334155;background:#111827;color:#fff;font-weight:800;font-size:20px;cursor:pointer}
+  .qtyInput{width:110px;text-align:center;font-size:22px;font-weight:900;padding:8px 10px;border-radius:10px;border:1px solid #334155;background:#0a0f1d;color:#fff}
   .modalActions{display:flex;gap:10px;justify-content:flex-end;margin-top:8px}
-
-  /* Toast */
-  #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);min-width:220px;max-width:90vw;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:#0d2230;color:var(--text);display:none;z-index:10001;text-align:center;font-weight:700}
-  #toast.ok{background:rgba(34,197,94,.15);border-color:#14532d;color:#86efac}
-  #toast.err{background:rgba(239,68,68,.15);border-color:#7f1d1d;color:#fecaca}
-
-  /* Small text */
-  .muted{color:var(--muted)}
 </style>
+<script src="https://unpkg.com/@zxing/library@latest"></script>
+<script src="https://unpkg.com/@zxing/browser@latest"></script>
 </head>
-
 <body>
-<div class="app">
+<div class="wrap">
   <header>
-    <div class="topbar">
-      <div class="brand">Poka-Yoke PRO • Scanner IBRIDO</div>
-      <span id="netBadge" class="offline">Offline</span>
+    <div class="row" style="align-items:center;justify-content:space-between">
+      <h1 style="flex:0 1 auto">Poka-Yoke PRO • Scanner IBRIDO</h1>
+      <span id="netBadge" class="small muted">Locale</span>
     </div>
   </header>
 
-  <!-- Tabs -->
-  <div class="tabs">
-    <button class="tab active" data-tab="commessa">Commessa</button>
-    <button class="tab" data-tab="scanner">Scanner</button>
-    <button class="tab" data-tab="righe">Righe raccolte</button>
-    <button class="tab" data-tab="impostazioni">Impostazioni</button>
+  <!-- Testata -->
+  <div class="panel">
+    <div class="row">
+      <label class="field">
+        <span>Numero commessa</span>
+        <input id="commessa" class="input" placeholder="Es. 024830" autocomplete="off"/>
+      </label>
+      <label class="field">
+        <span>Posizione</span>
+        <input id="posizione" class="input" placeholder="Es. POS 0020" autocomplete="off"/>
+      </label>
+      <label class="field" style="min-width:180px;flex:1 1 220px">
+        <span>Fotocamera</span>
+        <select id="cameraSelect" class="input"><option value="">(automatico)</option></select>
+      </label>
+      <button id="finalizza" class="btn btn-blue" style="flex:0 0 220px">🧾 Finalizza picking</button>
+    </div>
+    <div class="small" style="margin-top:6px">Compila <b>commessa</b> e <b>posizione</b> prima di iniziare.</div>
   </div>
 
   <main>
-    <!-- COMMESSA -->
-    <section id="commessa" class="view active">
-      <div class="panel">
-        <div class="row">
-          <label class="field">
-            <span>Numero commessa</span>
-            <input id="commessaInput" class="input" placeholder="Es. 024830" autocomplete="off"/>
-          </label>
-          <label class="field">
-            <span>Posizione</span>
-            <input id="posizioneInput" class="input" placeholder="Es. POS 0020" autocomplete="off"/>
-          </label>
-          <label class="field" style="min-width:200px;flex:1 1 260px">
-            <span>Fotocamera</span>
-            <select id="cameraSelect" class="input">
-              <option value="">(automatica)</option>
-            </select>
-          </label>
-        </div>
-        <div class="row" style="margin-top:10px">
-          <button id="goScanner" class="btn btn-primary">Vai allo Scanner</button>
-        </div>
-      </div>
-      <div class="panel muted">Suggerimento: compila commessa e posizione una volta sola; resteranno salvate sul dispositivo.</div>
-    </section>
+    <div class="panel status">
+      <div id="badge" class="badge">Pronto</div>
+      <div id="resultText">Scansiona prima la <b>LISTA</b>, poi il <b>PEZZO</b></div>
+      <div id="codes"></div>
+      <div class="small">Allinea il codice nel <b>quadrato</b> e centra nel cerchio rosso 🔴.</div>
+    </div>
 
-    <!-- SCANNER -->
-    <section id="scanner" class="view">
-      <div class="panel status">
-        <div id="badge" class="badge">Pronto</div>
-        <div id="resultText">Scansiona prima la <b>LISTA</b>, poi il <b>PEZZO</b></div>
-        <div id="codes"></div>
-        <div class="muted">Allinea il codice nel <b>quadrato</b> e centra nel cerchio rosso 🔴.</div>
+    <div class="panel">
+      <div class="row">
+        <button id="scanList" class="btn">📋 LISTA</button>
+        <button id="scanItem" class="btn">📦 PEZZO</button>
+        <button id="reset" class="btn">🔄 Reset</button>
       </div>
+      <div class="row" style="margin-top:8px">
+        <label class="small"><input type="checkbox" id="confirm2" checked> Conferma doppia</label>
+        <label class="small"><input type="checkbox" id="voice" checked> Annuncio vocale</label>
+        <span id="statusLine"></span>
+      </div>
+    </div>
 
-      <div class="panel">
-        <div class="row">
-          <button id="scanList" class="btn btn-primary">📋 LISTA (fullscreen)</button>
-          <button id="scanItem" class="btn btn-primary">📦 PEZZO (fullscreen)</button>
-          <button id="reset" class="btn btn-outline">🔄 Reset</button>
+    <!-- RIGHE RACCOLTE -->
+    <div class="panel">
+      <div class="row" style="align-items:center;justify-content:space-between">
+        <div class="small">Righe raccolte (scheda in tempo reale)</div>
+        <div class="row" style="gap:8px;flex:0 0 auto">
+          <button id="scaricaCSV" class="btn btn-sm btn-blue" disabled>⬇️ Scarica scheda (CSV)</button>
+          <button id="svuota" class="btn btn-sm btn-outline" disabled>🗑️ Svuota</button>
         </div>
       </div>
-    </section>
-
-    <!-- RIGHE -->
-    <section id="righe" class="view">
-      <div class="panel">
-        <div class="row" style="justify-content:space-between">
-          <div style="font-weight:800">Righe raccolte <span class="countPill" id="countPill">0</span></div>
-          <div class="row" style="gap:8px">
-            <button id="scaricaCSV" class="btn btn-outline" disabled>⬇️ Scarica CSV</button>
-            <button id="svuota" class="btn btn-outline" disabled>🗑️ Svuota</button>
-          </div>
-        </div>
-        <div id="righeBox" style="margin-top:10px">
-          <table>
-            <thead><tr><th>Ora</th><th>Codice</th><th>Q.tà</th><th>Commessa</th><th>Posizione</th></tr></thead>
-            <tbody id="righeBody"></tbody>
-          </table>
-        </div>
+      <div id="righeBox" style="margin-top:8px">
+        <table class="tbl" id="righeTbl">
+          <thead><tr><th>Ora</th><th>Codice</th><th>Q.tà</th><th>Commessa</th><th>Posizione</th></tr></thead>
+          <tbody></tbody>
+        </table>
       </div>
-    </section>
-
-    <!-- IMPOSTAZIONI -->
-    <section id="impostazioni" class="view">
-      <div class="panel">
-        <div style="font-weight:800;margin-bottom:8px">Impostazioni</div>
-        <div class="row">
-          <label class="field" style="flex:0 0 260px">
-            <span>Conferma doppia</span>
-            <select id="optConfirm" class="input">
-              <option value="on" selected>Attiva (più sicuro)</option>
-              <option value="off">Disattiva (più veloce)</option>
-            </select>
-          </label>
-          <label class="field" style="flex:0 0 260px">
-            <span>Annuncio vocale</span>
-            <select id="optVoice" class="input">
-              <option value="on" selected>Attivo</option>
-              <option value="off">Disattivo</option>
-            </select>
-          </label>
-          <label class="field" style="flex:0 0 260px">
-            <span>Vibrazione</span>
-            <select id="optVibrate" class="input">
-              <option value="on" selected>Attiva</option>
-              <option value="off">Disattiva</option>
-            </select>
-          </label>
-        </div>
-      </div>
-      <div class="panel muted">Versione UI: 1.0 • Solo locale (nessun invio in rete). Aggiungi alla Home per esperienza tipo app.</div>
-    </section>
+      <div class="small muted" style="margin-top:6px">Dati salvati solo sul dispositivo. Nessun invio in rete.</div>
+    </div>
   </main>
+
+  <footer>Consenti fotocamera • Funziona meglio in Chrome Android (aggiungi alla Home)</footer>
 </div>
 
-<!-- Fullscreen Camera -->
-<div id="camFS">
-  <div class="camTop">
-    <button id="camClose" class="camBtn">✕ Chiudi</button>
-    <div id="camHint" class="camBtn" style="pointer-events:none">Inquadra e centra nel cerchio</div>
-  </div>
-  <div class="camWrap">
-    <video id="video" muted playsinline></video>
-    <canvas id="overlay"></canvas>
-    <div id="guide"></div>
-    <div id="laser"></div>
-  </div>
-</div>
-
-<!-- Modale quantità -->
+<!-- Modal quantità -->
 <div id="qtyModal">
   <div class="modalCard">
     <div class="modalTitle">Inserisci quantità prelevata</div>
-    <div id="qtyInfo" class="muted" style="margin-bottom:6px"></div>
+    <div id="qtyInfo" class="small" style="margin-bottom:6px;color:#cbd5e1"></div>
     <div class="qtyRow">
       <button id="qtyMinus" class="qtyBtn">−</button>
-      <input id="qtyInput" class="qtyInput" type="number" min="1" step="1" value="1" />
+      <input id="qtyInput" class="qtyInput" type="number" min="1" step="1" placeholder="" />
       <button id="qtyPlus" class="qtyBtn">+</button>
     </div>
     <div class="modalActions">
-      <button id="qtyCancel" class="btn btn-outline">Annulla</button>
-      <button id="qtyOk" class="btn btn-ok">Conferma</button>
+      <button id="qtyCancel" class="btn btn-sm btn-outline">Annulla</button>
+      <button id="qtyOk" class="btn btn-sm btn-green">Conferma</button>
     </div>
   </div>
 </div>
 
-<!-- Toast -->
-<div id="toast"></div>
+<div id="flash"></div>
 
 <script>
-/* ===== Stato rete (solo badge) ===== */
-const netBadge = document.getElementById('netBadge');
-function setNetBadge(){
-  const on = navigator.onLine;
-  netBadge.textContent = on ? 'Online' : 'Offline';
-  netBadge.className = on ? 'online' : 'offline';
-}
-window.addEventListener('online', setNetBadge);
-window.addEventListener('offline', setNetBadge);
-setNetBadge();
+/* ======= STATO / VARIABILI ======= */
+document.addEventListener('click',()=>{speechSynthesis.getVoices();},{once:true});
 
-/* ===== Helper generali ===== */
-const $ = id => document.getElementById(id);
-const tabs = Array.from(document.querySelectorAll('.tab'));
-const views = {
-  commessa: $('commessa'),
-  scanner: $('scanner'),
-  righe: $('righe'),
-  impostazioni: $('impostazioni')
-};
-function activateTab(name){
-  tabs.forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
-  Object.entries(views).forEach(([k,el])=> el.classList.toggle('active', k===name));
-}
-tabs.forEach(t=> t.addEventListener('click', ()=> activateTab(t.dataset.tab)));
-$('goScanner').addEventListener('click', ()=> activateTab('scanner'));
-
-/* ===== Stato app ===== */
-let expected=null, scanned=null, mode=null;
+let expected=null, scanned=null, mode=null, stream, track, confirmBuf=[], lastVal=null;
 let picks=[]; // {ts, codice, qty, commessa, posizione}
 let pendingOK=null;
-let confirmBuf=[], lastVal=null;
 let lastScanTs=0;
+let cameraIdleTimer=null;
+let dirty=false; // per autosave heartbeat
 
-/* ===== Impostazioni (localStorage) ===== */
-const LSKEY_SETTINGS='poka_settings_v1';
-const LSKEY_SESSION='poka_session_v1';
-const settings = {
-  confirm:true,
-  voice:true,
-  vibrate:true
-};
-function loadSettings(){
-  try{
-    const s = JSON.parse(localStorage.getItem(LSKEY_SETTINGS)||'{}');
-    Object.assign(settings, s);
-  }catch{}
-  $('optConfirm').value = settings.confirm ? 'on':'off';
-  $('optVoice').value = settings.voice ? 'on':'off';
-  $('optVibrate').value = settings.vibrate ? 'on':'off';
-}
-function saveSettings(){
-  localStorage.setItem(LSKEY_SETTINGS, JSON.stringify(settings));
-}
-$('optConfirm').addEventListener('change', e=>{ settings.confirm = (e.target.value==='on'); saveSettings(); });
-$('optVoice').addEventListener('change', e=>{ settings.voice = (e.target.value==='on'); saveSettings(); });
-$('optVibrate').addEventListener('change', e=>{ settings.vibrate = (e.target.value==='on'); saveSettings(); });
+/* Elementi */
+const el=id=>document.getElementById(id);
+const video=el('video'), overlay=el('overlay'), guide=el('guide'), laser=el('laser');
+const badge=el('badge'), resultText=el('resultText'), codes=el('codes');
+const confirm2=el('confirm2'), voice=el('voice'), cameraArea=el('cameraArea'), statusLine=el('statusLine'), flash=el('flash');
+const commessa=el('commessa'), posizione=el('posizione');
+const qtyModal=el('qtyModal'), qtyInput=el('qtyInput'), qtyMinus=el('qtyMinus'), qtyPlus=el('qtyPlus'), qtyOk=el('qtyOk'), qtyCancel=el('qtyCancel'), qtyInfo=el('qtyInfo');
+const scaricaCSV=el('scaricaCSV'), finalizza=el('finalizza'), svuota=el('svuota');
+const cameraSelect=el('cameraSelect');
 
-/* ===== Commessa / posizione (persist) ===== */
-function sanitize(s,max=64){return String(s||'').replace(/[^\w\-\. \/]/g,'').slice(0,max)}
-function loadSessionFields(){
-  try{
-    const s = JSON.parse(localStorage.getItem(LSKEY_SESSION)||'{}');
-    $('commessaInput').value = s.commessa||'';
-    $('posizioneInput').value = s.posizione||'';
-  }catch{}
-}
-function saveSessionFields(){
-  const data = {
-    commessa: sanitize($('commessaInput').value,64),
-    posizione: sanitize($('posizioneInput').value,64)
-  };
-  localStorage.setItem(LSKEY_SESSION, JSON.stringify(data));
-}
-$('commessaInput').addEventListener('change', saveSessionFields);
-$('posizioneInput').addEventListener('change', saveSessionFields);
-
-/* ===== Audio/voce/vibrazione ===== */
+/* Audio + voce */
 let actx;
-function tone(f=880,d=120,t='sine',v=.25){try{if(!actx)actx=new (window.AudioContext||window.webkitAudioContext)();const o=actx.createOscillator(),g=actx.createGain();o.type=t;o.frequency.value=f;g.gain.value=v;o.connect(g);g.connect(actx.destination);o.start();setTimeout(()=>o.stop(),d);}catch(e){}}
+function tone(f=880,d=150,t='sine',v=.25){try{if(!actx)actx=new (window.AudioContext||window.webkitAudioContext)();const o=actx.createOscillator(),g=actx.createGain();o.type=t;o.frequency.value=f;g.gain.value=v;o.connect(g);g.connect(actx.destination);o.start();setTimeout(()=>o.stop(),d);}catch(e){}}
 function okSound(){tone(900,120);setTimeout(()=>tone(1200,140),130)}
-function errSound(){tone(250,220,'square',.22);setTimeout(()=>tone(180,230,'square',.20),200)}
-function speak(msg){ if(!settings.voice) return; try{ const u=new SpeechSynthesisUtterance(msg); u.lang='it-IT'; speechSynthesis.cancel(); speechSynthesis.speak(u);}catch(e){} }
-function vibrate(p){ if(settings.vibrate && navigator.vibrate) navigator.vibrate(p) }
-
-/* ===== UI scanner ===== */
-const codesEl = $('codes'), badge=$('badge'), resultText=$('resultText');
+function errSound(){tone(250,240,'square',.22);setTimeout(()=>tone(180,250,'square',.20),220)}
+function speak(msg,rate=1,pitch=1,vol=1){if(!voice.checked)return;try{const u=new SpeechSynthesisUtterance(msg);u.lang='it-IT';u.volume=vol;u.rate=rate;u.pitch=pitch;const v=speechSynthesis.getVoices().find(x=>x.lang.startsWith('it'));if(v)u.voice=v;speechSynthesis.cancel();speechSynthesis.speak(u);}catch(e){}}
+function vibrate(p){if(navigator.vibrate)navigator.vibrate(p)}
+function flashScreen(c){flash.style.background=c;flash.style.opacity=.6;setTimeout(()=>flash.style.opacity=0,160)}
+function setBadge(t,cls){badge.textContent=t;badge.className='badge '+(cls==='ok'?'ok':cls==='err'?'err':'')}
 function norm(s){return s?String(s).trim().toUpperCase():s}
-function box(label,val,cls){
-  return `<div class="codeBox ${cls||''}">
-    <div class="codeLabel">${label}</div>
-    <div class="codeValue ${cls||''}">${val?val:'-'}</div>
-  </div>`;
-}
-function updateUI(){
-  const same = expected && scanned && (norm(expected)===norm(scanned));
-  const stateClass = same ? 'ok' : (expected && scanned ? 'err' : '');
-  codesEl.innerHTML = box('LISTA', expected||'', same?'ok':'') + box('PEZZO', scanned||'', stateClass);
+function status(m){statusLine.textContent=m||''}
+function resetConfirm(){confirmBuf=[];lastVal=null;}
+function sanitize(s,max=64){return String(s||'').replace(/[^\w\-\. \/]/g,'').slice(0,max)}
 
-  if(expected && scanned){
-    if(same){
-      badge.textContent='✅ CORRETTO'; badge.className='badge ok';
-      resultText.innerHTML='Match perfetto!';
-      okSound(); if(settings.voice) speak('Codice corretto'); vibrate(60);
+/* ======= PERSISTENZA LOCALE ======= */
+const SKEY='py_session_v2';
+const BKEY='py_backup_csv_v2';
+let heartbeat=null;
+
+function markDirty(){ dirty=true; trySave(); }
+
+function trySave(){
+  // Salvataggio istantaneo ad ogni cambiamento
+  const data = {
+    when: Date.now(),
+    commessa: sanitize(commessa.value,64),
+    posizione: sanitize(posizione.value,64),
+    picks: picks.map(p=>({ts:p.ts.getTime(), codice:p.codice, qty:p.qty, commessa:p.commessa, posizione:p.posizione}))
+  };
+  localStorage.setItem(SKEY, JSON.stringify(data));
+}
+
+function backupCSV(){
+  if(!picks.length) return;
+  const head = 'timestamp_ms,iso,codice,quantita,commessa,posizione\n';
+  const body = picks.map(p=>{
+    return [p.ts.getTime(), p.ts.toISOString(), p.codice, p.qty, p.commessa||'', p.posizione||'']
+      .map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',');
+  }).join('\n');
+  localStorage.setItem(BKEY, head+body);
+}
+
+function restoreIfAny(){
+  try{
+    const raw = localStorage.getItem(SKEY); if(!raw) return;
+    const data = JSON.parse(raw);
+    if(!data || !data.picks || !data.picks.length) return;
+    const ok = confirm(`Trovata una sessione del ${new Date(data.when).toLocaleString()}. Vuoi ripristinarla?`);
+    if(!ok) return;
+    commessa.value = data.commessa || '';
+    posizione.value = data.posizione || '';
+    picks = data.picks.map(x=>({ts:new Date(x.ts), codice:x.codice, qty:x.qty, commessa:x.commessa, posizione:x.posizione}));
+    renderPicks();
+    updateUI();
+  }catch(e){}
+}
+
+/* Heartbeat autosave ogni 30s se ci sono novità */
+function startHeartbeat(){
+  if(heartbeat) clearInterval(heartbeat);
+  heartbeat = setInterval(()=>{
+    if(dirty){ trySave(); dirty=false; }
+  }, 30000);
+}
+
+/* Avviso anti-refresh/uscita se ci sono righe */
+window.addEventListener('beforeunload', (e)=>{
+  if(picks.length>0){
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
+
+/* ======= UI codici grandi ======= */
+function updateUI(){
+  const same = expected && scanned && (norm(expected) === norm(scanned));
+  const stateClass = same ? 'ok' : (expected && scanned ? 'err' : '');
+
+  const box = (label, val, cls) => `
+    <div class="codeBox ${cls||''}">
+      <div class="codeLabel">${label}</div>
+      <div class="codeValue ${cls||''}">${val ? val : '-'}</div>
+    </div>`;
+
+  codes.innerHTML = box('LISTA', expected || '', same ? 'ok' : '') +
+                    box('PEZZO', scanned  || '', stateClass);
+
+  if (expected && scanned){
+    if (same){
+      setBadge('✅ CORRETTO','ok');
+      resultText.innerHTML = 'Match perfetto!';
+      flashScreen('rgba(22,163,74,.5)'); okSound(); speak("Codice corretto",1,1.1,1); vibrate(60);
       pendingOK = expected;
       openQtyModal(pendingOK);
-      // resta nella TAB Scanner (non cambiamo tab)
-    }else{
-      badge.textContent='❌ ERRATO'; badge.className='badge err';
-      resultText.innerHTML='Codice diverso!';
-      errSound(); if(settings.voice) speak('Errore, codice diverso'); vibrate([60,60,180]);
-      pendingOK=null;
+    } else {
+      setBadge('❌ ERRATO','err');
+      resultText.innerHTML = 'Codice diverso!';
+      flashScreen('rgba(220,38,38,.55)'); errSound(); speak("Errore, codice diverso",0.9,0.8,1); vibrate([60,60,180]);
+      pendingOK = null;
     }
-  }else{
-    badge.textContent='Pronto'; badge.className='badge';
-    resultText.innerHTML='Scansiona prima la <b>LISTA</b>, poi il <b>PEZZO</b>';
+  } else {
+    setBadge('Pronto');
+    resultText.innerHTML = 'Scansiona prima la <b>LISTA</b>, poi il <b>PEZZO</b>';
   }
 }
 
-/* ===== Toast ===== */
-const toast=$('toast'); let toastTimer=null;
-function showToast(text,kind='ok',ms=1800){
-  toast.textContent=text; toast.className=''; toast.classList.add(kind); toast.style.display='block';
-  clearTimeout(toastTimer); toastTimer=setTimeout(()=> toast.style.display='none', ms);
+/* ======= Modal quantità (campo vuoto, convalida) ======= */
+function openQtyModal(code){
+  qtyInfo.innerHTML = `Codice: <b>${code}</b>`;
+  qtyInput.value = ''; // <-- campo vuoto
+  qtyModal.style.display = 'flex';
+  setTimeout(()=>qtyInput.focus(),50);
 }
+function closeQtyModal(){ qtyModal.style.display='none'; }
 
-/* ===== Tab Righe ===== */
-function renderRighe(){
-  const tb=$('righeBody');
+qtyMinus.onclick = ()=>{
+  const v = parseInt(qtyInput.value||'0',10);
+  if(isNaN(v) || v<=1){ qtyInput.value=''; return; }
+  qtyInput.value = String(v-1);
+};
+qtyPlus.onclick  = ()=>{
+  const v = parseInt(qtyInput.value||'0',10);
+  qtyInput.value = String(isNaN(v)||v<1 ? 1 : v+1);
+};
+qtyCancel.onclick= ()=>{ closeQtyModal(); };
+
+qtyOk.onclick    = ()=>{
+  const parsed = parseInt(qtyInput.value||'',10);
+  if(isNaN(parsed) || parsed<=0){
+    alert('Inserisci una quantità valida (> 0).');
+    qtyInput.focus();
+    return;
+  }
+  if(!pendingOK){ closeQtyModal(); return; }
+  const ts = new Date();
+  const row = {
+    ts,
+    codice: sanitize(pendingOK,128),
+    qty: parsed,
+    commessa: sanitize(commessa.value,64),
+    posizione: sanitize(posizione.value,64)
+  };
+  picks.push(row);
+  renderPicks();
+  pendingOK = null;
+  scanned = null;
+  updateUI();
+
+  // Persistenza & backup
+  markDirty();
+  if(picks.length % 10 === 0){ backupCSV(); }
+
+  closeQtyModal();
+};
+
+/* ======= Tabella righe raccolte ======= */
+function renderPicks(){
+  const tb = document.querySelector('#righeTbl tbody');
   tb.innerHTML = picks.map(p=>{
-    const hh=p.ts.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    const hh = p.ts.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
     return `<tr><td>${hh}</td><td>${p.codice}</td><td>${p.qty}</td><td>${p.commessa||'-'}</td><td>${p.posizione||'-'}</td></tr>`;
   }).join('');
-  $('scaricaCSV').disabled = picks.length===0;
-  $('svuota').disabled = picks.length===0;
-  $('countPill').textContent = String(picks.length);
+  const has = picks.length>0;
+  scaricaCSV.disabled = !has;
+  svuota.disabled = !has;
 }
+
+/* ======= CSV ======= */
 function toCSV(){
-  const head='timestamp_ms,iso,codice,quantita,commessa,posizione\n';
-  const body=picks.map(p=>{
+  const head = 'timestamp_ms,iso,codice,quantita,commessa,posizione\n';
+  const body = picks.map(p=>{
     return [p.ts.getTime(), p.ts.toISOString(), p.codice, p.qty, p.commessa||'', p.posizione||'']
       .map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',');
   }).join('\n');
   return head+body;
 }
-$('scaricaCSV').addEventListener('click', ()=>{
+function downloadCSV(){
   if(!picks.length) return;
-  const csv=toCSV();
+  const csv = toCSV();
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a'); a.href=url; a.download=`scheda_picking_${($('commessaInput').value||'commessa')}.csv`; a.click();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `scheda_picking_${(commessa.value||'commessa')}.csv`; a.click();
   URL.revokeObjectURL(url);
-});
-$('svuota').addEventListener('click', ()=>{
-  if(!picks.length) return;
-  if(confirm('Sicuro di svuotare la sessione corrente?')){
-    picks=[]; renderRighe(); updateUI(); showToast('Sessione svuotata','err',1400);
-  }
-});
-
-/* ===== Modale quantità ===== */
-const qtyModal=$('qtyModal'), qtyInput=$('qtyInput'), qtyMinus=$('qtyMinus'), qtyPlus=$('qtyPlus'), qtyOk=$('qtyOk'), qtyCancel=$('qtyCancel'), qtyInfo=$('qtyInfo');
-function openQtyModal(code){
-  qtyInfo.innerHTML = `Codice: <b>${code}</b>`;
-  qtyInput.value='1';
-  qtyModal.style.display='flex';
-  setTimeout(()=>qtyInput.focus(),50);
 }
-function closeQtyModal(){ qtyModal.style.display='none'; }
-qtyMinus.onclick=()=>{ const v=Math.max(1, parseInt(qtyInput.value||'1',10)-1); qtyInput.value=v; };
-qtyPlus.onclick =()=>{ const v=Math.max(1, parseInt(qtyInput.value||'1',10)+1); qtyInput.value=v; };
-qtyCancel.onclick=()=>{ closeQtyModal(); };
-qtyOk.onclick=()=>{
-  const qty=Math.max(1, parseInt(qtyInput.value||'1',10));
-  if(!pendingOK){ closeQtyModal(); return; }
-  const ts=new Date();
-  const cm=sanitize($('commessaInput').value,64), ps=sanitize($('posizioneInput').value,64);
-  picks.push({ts, codice: sanitize(pendingOK,128), qty, commessa:cm, posizione:ps});
-  renderRighe(); showToast('Riga aggiunta','ok',1400);
-  pendingOK=null; scanned=null; updateUI(); closeQtyModal();
+
+/* ======= Pulsanti ======= */
+el('scanList').onclick=()=>startScan('list');
+el('scanItem').onclick=()=>startScan('item');
+el('reset').onclick=()=>{
+  expected=null; scanned=null; pendingOK=null; updateUI();
+};
+scaricaCSV.onclick = downloadCSV;
+finalizza.onclick = ()=>{
+  if(!picks.length){ alert('Nessuna riga raccolta.'); return; }
+  backupCSV(); // backup finale
+  downloadCSV();
+};
+svuota.onclick = ()=>{
+  if(!picks.length) return;
+  if(!confirm('Sicuro di svuotare la sessione corrente?')) return;
+  picks = [];
+  renderPicks(); updateUI();
+  markDirty();
 };
 
-/* ===== Reset ===== */
-$('reset').addEventListener('click', ()=>{ expected=null; scanned=null; pendingOK=null; updateUI(); });
-
-/* ===== Camera fullscreen (BarcodeDetector ⇒ ZXing) ===== */
-const camFS=$('camFS'), camClose=$('camClose'), video=$('video'), overlay=$('overlay'), guide=$('guide'), laser=$('laser');
-let stream=null, track=null, usingZX=false;
-let currentMode=null;
-
-camClose.addEventListener('click', stopCameraFS);
-
-$('scanList').addEventListener('click', ()=>startScanFS('list'));
-$('scanItem').addEventListener('click', ()=>startScanFS('item'));
-
-function canAccept(){
-  const now=performance.now();
-  if(now-lastScanTs<600) return false;
-  lastScanTs=now; return true;
+/* ======= Camera list ======= */
+async function populateCameras(){
+  try{
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const vids = devices.filter(d=>d.kind==='videoinput');
+    cameraSelect.innerHTML = '<option value="">(automatico)</option>' +
+      vids.map(v=>`<option value="${v.deviceId}">${v.label||'Fotocamera'}</option>`).join('');
+  }catch(_){}
 }
+if(navigator.mediaDevices?.enumerateDevices){ populateCameras(); }
 
-async function startScanFS(which){
-  // resta nella TAB Scanner
-  activateTab('scanner');
-  // salva commessa/posizione
-  saveSessionFields();
-
-  const cm=sanitize($('commessaInput').value,64), ps=sanitize($('posizioneInput').value,64);
+/* ======= Scansione: Detector → ZXing ======= */
+async function startScan(which){
+  const cm = sanitize(commessa.value,64), ps = sanitize(posizione.value,64);
   if(!cm || !ps){ alert('Inserisci Numero commessa e Posizione prima di scansionare.'); return; }
+  commessa.value = cm; posizione.value = ps;
+  markDirty();
 
-  currentMode=which;
-  camFS.classList.add('active');
-  try{
-    await startDetectorHybrid(); usingZX=false;
-  }catch(e){
-    await startZXingHybrid(); usingZX=true;
+  mode=which; cameraArea.style.display='block'; resetConfirm(); status('Avvio camera…');
+
+  clearTimeout(cameraIdleTimer);
+  cameraIdleTimer = setTimeout(()=>{ stopStream(); cameraArea.style.display='none'; }, 60_000); // auto stop dopo 60s
+
+  if('BarcodeDetector' in window){
+    try{ await startDetectorHybrid(); return; } catch(e){}
   }
+  await startZXingHybrid();
 }
 
-function stopCameraFS(){
-  try{
-    if(video.srcObject){ video.srcObject.getTracks().forEach(t=>t.stop()); video.srcObject=null; }
-    if(track) track.stop();
-  }catch(e){}
-  stream=null; track=null; camFS.classList.remove('active');
-  // restiamo nella tab Scanner (non cambiamo)
+/* Debounce lettura */
+function canAccept(){
+  const now = performance.now();
+  if(now - lastScanTs < 600) return false;
+  lastScanTs = now;
+  return true;
 }
 
 /* Detector nativo */
 async function startDetectorHybrid(){
   const constraints={video:{facingMode:"environment",width:{ideal:1280},height:{ideal:720},focusMode:"continuous"}};
-  const chosen=$('cameraSelect').value; if(chosen) constraints.video.deviceId={exact:chosen};
+  const chosen = cameraSelect.value;
+  if(chosen) constraints.video.deviceId = { exact: chosen };
 
-  stream=await navigator.mediaDevices.getUserMedia(constraints);
-  track=stream.getVideoTracks()[0]; video.srcObject=stream; await video.play();
+  stream=await navigator.mediaDevices.getUserMedia(constraints).catch(()=>null);
+  if(!stream){ alert('Fotocamera non disponibile o permesso negato.'); cameraArea.style.display='none'; return; }
+  track=stream.getVideoTracks()[0]; (document.getElementById('video').srcObject=stream); await document.getElementById('video').play();
 
   const detector=new BarcodeDetector({formats:['qr_code','code_128','ean_13','ean_8','upc_a','code_39']});
-  const ctx=overlay.getContext('2d');
+  const ctx=document.getElementById('overlay').getContext('2d');
 
   const loop=()=>{
     if(!stream){return;}
+    const video=document.getElementById('video'), overlay=document.getElementById('overlay'), guide=document.getElementById('guide'), laser=document.getElementById('laser');
     if(video.readyState<2){ requestAnimationFrame(loop); return; }
     overlay.width=video.videoWidth; overlay.height=video.videoHeight; ctx.clearRect(0,0,overlay.width,overlay.height);
 
@@ -518,7 +454,7 @@ async function startDetectorHybrid(){
       }
 
       if(accepted && canAccept()){
-        if(settings.confirm){
+        if(confirm2.checked){
           if(lastVal===accepted){ confirmBuf.push(accepted); } else { confirmBuf=[accepted]; lastVal=accepted; }
           if(confirmBuf.length>=2){ processScan(accepted); return; }
         } else { processScan(accepted); return; }
@@ -532,29 +468,33 @@ async function startDetectorHybrid(){
 /* ZXing fallback */
 async function startZXingHybrid(){
   const constraints={video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}};
-  const chosen=$('cameraSelect').value; if(chosen) constraints.video.deviceId={ exact: chosen };
+  const chosen = cameraSelect.value;
+  if(chosen) constraints.video.deviceId = { exact: chosen };
 
-  stream=await navigator.mediaDevices.getUserMedia(constraints);
-  track=stream.getVideoTracks()[0];
+  const s=await navigator.mediaDevices.getUserMedia(constraints).catch(()=>null);
+  if(!s){ alert('Fotocamera non disponibile o permesso negato.'); cameraArea.style.display='none'; return; }
+  stream=s; track=stream.getVideoTracks()[0];
+
+  const vid=document.createElement('video');
+  vid.setAttribute('playsinline',''); vid.muted=true; vid.autoplay=true; vid.srcObject=stream;
+  document.body.appendChild(vid);
 
   const formats=[ZXing.BarcodeFormat.QR_CODE,ZXing.BarcodeFormat.CODE_128,ZXing.BarcodeFormat.EAN_13,ZXing.BarcodeFormat.UPC_A,ZXing.BarcodeFormat.CODE_39];
   const hints=new Map(); hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,formats);
   const reader=new ZXing.BrowserMultiFormatReader(hints);
 
-  // Usa il <video> già presente a schermo intero
-  video.srcObject=stream; await video.play();
+  await vid.play(); status('Inquadra il codice nel cerchio rosso…');
 
   const loop=async()=>{
     try{
-      const res=await reader.decodeFromVideoDevice(null, video);
-      if(res && canAccept()){
-        if(pointInGuideZXing(res,video)){ processScan(res.text); return; }
-      }
+      const res=await reader.decodeFromVideoElement(vid);
+      if(res && canAccept()){ if(pointInGuideZXing(res,vid)){ processScan(res.text); vid.remove(); return; } }
     }catch(e){}
     requestAnimationFrame(loop);
   };
   loop();
 }
+
 function pointInGuideZXing(result,vidEl){
   try{
     const pts=result.resultPoints||[]; if(pts.length===0) return true;
@@ -567,7 +507,7 @@ function pointInGuideZXing(result,vidEl){
     const offX=(vrect.width-dispW)/2, offY=(vrect.height-dispH)/2;
 
     const domX=offX+cx*scale, domY=offY+cy*scale;
-    const g2=laser.getBoundingClientRect();
+    const g2=document.getElementById('laser').getBoundingClientRect();
     const lx=g2.left-vrect.left+g2.width/2, ly=g2.top-vrect.top+g2.height/2;
     const dist=Math.sqrt((domX-lx)**2+(domY-ly)**2);
     return (dist < g2.width/2);
@@ -577,29 +517,34 @@ function pointInGuideZXing(result,vidEl){
 /* Gestione lettura singola */
 function processScan(text){
   const val = sanitize(text,128);
-  if(currentMode==='list'){ expected=val; }
-  else{ scanned=val; }
-  // Chiudiamo la camera sempre (sia ok che err) e restiamo nella tab Scanner
-  stopCameraFS();
-  updateUI();
+  if(mode==='list') expected = val; else scanned = val;
+  stopStream(); cameraArea.style.display='none'; updateUI();
 }
 
-/* ===== Camera select ===== */
-async function populateCameras(){
+/* Stop camera */
+function stopStream(){
   try{
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    const vids = devices.filter(d=>d.kind==='videoinput');
-    $('cameraSelect').innerHTML = '<option value="">(automatica)</option>' +
-      vids.map(v=>`<option value="${v.deviceId}">${v.label||'Fotocamera'}</option>`).join('');
-  }catch(_){}
+    const v = document.getElementById('video');
+    if(v && v.srcObject){ v.srcObject.getTracks().forEach(t=>t.stop()); v.srcObject=null; }
+    if(track) track.stop();
+  }catch(e){}
+  status('');
+  clearTimeout(cameraIdleTimer); cameraIdleTimer=null;
 }
-if(navigator.mediaDevices?.enumerateDevices){ populateCameras(); }
 
-/* ===== Avvio ===== */
-loadSettings();
-loadSessionFields();
-updateUI();
-renderRighe();
+/* ======= Inizializzazione ======= */
+function initBindings(){
+  // Salvataggi instant su input
+  commessa.addEventListener('input', markDirty);
+  posizione.addEventListener('input', markDirty);
+}
+function init(){
+  restoreIfAny();
+  updateUI();
+  startHeartbeat();
+  initBindings();
+}
+if(document.readyState!=='loading') init(); else document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
 </html>
