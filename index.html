@@ -12,7 +12,7 @@
   header h1{margin:0;font-size:18px}
   main{flex:1;display:flex;flex-direction:column;gap:12px;padding:12px}
   .panel{background:var(--panel);border:1px solid #1f2937;border-radius:14px;padding:14px}
-  .row{display:flex;gap:10px;flex-wrap:wrap}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   .btn{flex:1 1 150px;padding:12px 14px;border-radius:12px;border:1px solid #243045;background:#111827;color:#fff;font-size:16px;font-weight:700;cursor:pointer}
   .btn:active{transform:scale(.98)}
   .btn-sm{flex:0 0 auto;font-size:14px;padding:10px 12px}
@@ -61,11 +61,13 @@
   .pinRow{display:flex;gap:8px;justify-content:center}
   .pinMsg{min-height:1em;font-size:12px;color:#cbd5e1;text-align:center}
   .cooldown{color:#fecaca}
+  .pinRemember{display:flex;align-items:center;gap:8px;justify-content:center;font-size:12px;color:#cbd5e1}
 </style>
 <script src="https://unpkg.com/@zxing/library@latest"></script>
 <script src="https://unpkg.com/@zxing/browser@latest"></script>
 </head>
 <body>
+<!-- ====== PIN / Licenza ====== -->
 <div id="pinGate">
   <div class="pinCard">
     <div class="pinTitle">🔒 Accesso protetto</div>
@@ -80,15 +82,19 @@
       <button class="pinBtn" style="flex:1">0</button>
       <button id="pinOk" class="pinBtn btn-green" style="flex:1">OK</button>
     </div>
+    <label class="pinRemember"><input id="remember" type="checkbox" /> Ricordami su questo dispositivo (30 giorni)</label>
     <div id="pinMsg" class="pinMsg"></div>
   </div>
 </div>
 
 <div class="wrap" aria-hidden="true"><!-- nascosto finché non sblocchi -->
   <header>
-    <div class="row" style="align-items:center;justify-content:space-between">
+    <div class="row" style="justify-content:space-between">
       <h1 style="flex:0 1 auto">Poka-Yoke OFFLINE • Scanner IBRIDO</h1>
-      <span class="small muted">Solo locale · CSV</span>
+      <div class="row" style="gap:8px">
+        <span id="licenzaInfo" class="small muted"></span>
+        <button id="lockNow" class="btn btn-sm btn-outline">🔒 Blocca ora</button>
+      </div>
     </div>
   </header>
 
@@ -169,23 +175,32 @@
     </div>
   </main>
 
-  <footer>Consenti fotocamera • Funziona meglio in Chrome Android (aggiungi alla Home) • Modalità OFFLINE</footer>
+  <footer id="footerNote">Consenti fotocamera • Funziona meglio in Chrome Android (aggiungi alla Home) • Modalità OFFLINE</footer>
 </div>
 
 <div id="flash"></div>
 
 <script>
+/* ======= LICENZA (opzionale) =======
+   Se compili OWNER e/o EXPIRY, l'app mostra i dati di licenza.
+   Se EXPIRY è passato, l'app resta bloccata (richiede rinnovo). */
+const LICENSE_OWNER = "";           // es. "Galli & Cassina" (lascia vuoto se non vuoi mostrarlo)
+const LICENSE_EXPIRY = "";          // es. "2026-12-31" (vuoto = nessuna scadenza)
+
 /* ===== PIN CONFIG =====
    PIN_MODE: 'fixed' oppure 'daily'
    - fixed: confronta SHA-256 del PIN inserito con PIN_HASH (base64)
    - daily: PIN cambia ogni giorno (derivato da una chiave segreta e dalla data)
 */
-const PIN_MODE = 'fixed'; // cambia in 'daily' se vuoi PIN giornaliero
-const PIN_HASH = 'srLxBNMsY4kD4VGpsg1uJ7QdjAyEz4RYc4+Dyi8d10Q='; // SHA-256 base64 di "2025"
+const PIN_MODE = 'fixed'; // 'fixed' oppure 'daily'
+const PIN_HASH = 'srLxBNMsY4kD4VGpsg1uJ7QdjAyEz4RYc4+Dyi8d10Q='; // SHA-256 base64 del PIN "2025"
 const DAILY_SECRET = 'CAMBIA_QUESTA_CHIAVE_LUNGA'; // usata solo se PIN_MODE = 'daily'
 
 // Auto-lock
 const AUTOLOCK_MS = 5 * 60 * 1000; // 5 minuti inattività
+const REMEMBER_DAYS = 30;          // durata "Ricordami" in giorni
+const LS_AUTH = 'pokaYokeAuth_v2'; // storage token
+
 let _autolockTimer = null;
 
 const pinGate = document.getElementById('pinGate');
@@ -194,9 +209,37 @@ const pinMsg = document.getElementById('pinMsg');
 const pinButtons = Array.from(document.querySelectorAll('.pinBtn'));
 const pinClear = document.getElementById('pinClear');
 const pinOk = document.getElementById('pinOk');
+const remember = document.getElementById('remember');
 let pinAttempts = 0;
 let pinLockedUntil = 0;
 
+/* ====== LICENZA VISUALE ====== */
+(function showLicenseInfo(){
+  const f = document.getElementById('footerNote');
+  const top = document.getElementById('licenzaInfo');
+  let extra = [];
+  if(LICENSE_OWNER) extra.push(`Licenza: ${LICENSE_OWNER}`);
+  if(LICENSE_EXPIRY){
+    const d = new Date(LICENSE_EXPIRY+"T23:59:59");
+    extra.push(`Scadenza: ${d.toLocaleDateString()}`);
+    if(Date.now() > d.getTime()){
+      // licenza scaduta -> blocca tutto
+      document.body.innerHTML = `
+        <div style="text-align:center;margin-top:35vh;color:#f33;font-family:system-ui">
+          <h2>⛔ Licenza scaduta</h2>
+          <p>Contatta lo sviluppatore per il rinnovo.</p>
+        </div>`;
+      throw new Error('Licenza scaduta');
+    }
+  }
+  const txt = extra.join(' • ');
+  if(txt){
+    top.textContent = txt;
+    f.innerHTML += ` • ${txt}`;
+  }
+})();
+
+/* ====== AUTENTICAZIONE PIN ====== */
 function resetAutolock(){
   clearTimeout(_autolockTimer);
   _autolockTimer = setTimeout(()=> lockApp('Sessione scaduta. Inserisci di nuovo il PIN.'), AUTOLOCK_MS);
@@ -204,6 +247,8 @@ function resetAutolock(){
 ['click','touchstart','keydown'].forEach(ev=>{
   document.addEventListener(ev, ()=>{ if(pinGate.style.display==='none') resetAutolock(); }, {passive:true});
 });
+
+document.getElementById('lockNow').addEventListener('click', ()=> lockApp('Sessione bloccata.'));
 
 pinButtons.forEach(b=>{
   b.addEventListener('click', ()=>{
@@ -239,6 +284,14 @@ async function checkPIN(){
 
   if(valid){
     unlockApp();
+    // salva token se "Ricordami"
+    if(remember.checked){
+      const until = Date.now() + REMEMBER_DAYS*24*60*60*1000;
+      const token = { hash: PIN_HASH, until };
+      localStorage.setItem(LS_AUTH, JSON.stringify(token));
+    }else{
+      localStorage.removeItem(LS_AUTH);
+    }
   }else{
     pinAttempts++;
     if(pinAttempts >= 5){
@@ -251,6 +304,19 @@ async function checkPIN(){
     }
     pinInput.value='';
   }
+}
+
+function tryAutoLogin(){
+  try{
+    const raw = localStorage.getItem(LS_AUTH);
+    if(!raw) return false;
+    const tok = JSON.parse(raw);
+    if(tok.hash === PIN_HASH && Date.now() < (tok.until||0)){
+      unlockApp();
+      return true;
+    }
+  }catch(_){}
+  return false;
 }
 
 function lockApp(msg){
@@ -272,7 +338,6 @@ function unlockApp(){
 async function sha256B64(str){
   const enc = new TextEncoder();
   const buf = await crypto.subtle.digest('SHA-256', enc.encode(str));
-  // base64
   let bin = ''; const bytes = new Uint8Array(buf);
   for(let i=0;i<bytes.length;i++) bin += String.fromCharCode(bytes[i]);
   return btoa(bin);
@@ -286,15 +351,14 @@ async function dailyPin(){
   const key = await crypto.subtle.importKey('raw', enc.encode(DAILY_SECRET), {name:'HMAC', hash:'SHA-256'}, false, ['sign']);
   const sig = await crypto.subtle.sign('HMAC', key, enc.encode(ymd));
   const view = new DataView(sig);
-  // prendi un uint32 e riduci a 4 cifre
   const n = (view.getUint32(0, false) % 10000);
   return String(n).padStart(4,'0');
 }
 
-/* Avvia bloccato */
-lockApp();
+/* Avvio bloccato o auto-login se ricordato */
+if(!tryAutoLogin()){ lockApp(); }
 
-/* ======= App scanner OFFLINE (come prima) ======= */
+/* ======= App scanner OFFLINE ======= */
 document.addEventListener('click',()=>{speechSynthesis.getVoices();},{once:true});
 let expected=null, scanned=null, mode=null, stream, track, confirmBuf=[], lastVal=null;
 let picks=[]; // {ts, codice, qty, commessa, posizione}
@@ -359,7 +423,7 @@ function updateUI(){
   }
 }
 
-/* Modal quantità (minima: non riproposta in questo snippet per brevità) */
+/* Modal quantità minimale (prompt) */
 function openQtyModal(code){
   const qty = prompt(`Quantità per ${code}`, '1');
   const v = Math.max(1, parseInt(qty||'1',10));
@@ -450,12 +514,12 @@ document.getElementById('saveSession').onclick = ()=>saveLocal();
 document.getElementById('loadSession').onclick = ()=>loadLocal();
 document.getElementById('svuota').onclick = ()=>clearAll();
 
-/* Camera list */
+/* Elenco fotocamere */
 async function populateCameras(){
   try{
     const devices = await navigator.mediaDevices.enumerateDevices();
     const vids = devices.filter(d=>d.kind==='videoinput');
-    document.getElementById('cameraSelect').innerHTML = '<option value="">(automatico)</option>' +
+    cameraSelect.innerHTML = '<option value="">(automatico)</option>' +
       vids.map(v=>`<option value="${v.deviceId}">${v.label||'Fotocamera'}</option>`).join('');
   }catch(_){}
 }
@@ -467,10 +531,10 @@ async function startScan(which){
   if(!cm || !ps){ alert('Inserisci Numero commessa e Posizione prima di scansionare.'); return; }
   commessa.value = cm; posizione.value = ps;
 
-  mode=which; document.getElementById('cameraArea').style.display='block'; resetConfirm(); status('Avvio camera…');
+  mode=which; cameraArea.style.display='block'; resetConfirm(); status('Avvio camera…');
 
   clearTimeout(cameraIdleTimer);
-  cameraIdleTimer = setTimeout(()=>{ stopStream(); document.getElementById('cameraArea').style.display='none'; }, 60_000);
+  cameraIdleTimer = setTimeout(()=>{ stopStream(); cameraArea.style.display='none'; }, 60_000);
 
   if('BarcodeDetector' in window){
     try{ await startDetectorHybrid(); return; } catch(e){}
@@ -489,19 +553,18 @@ function canAccept(){
 /* Detector nativo */
 async function startDetectorHybrid(){
   const constraints={video:{facingMode:"environment",width:{ideal:1280},height:{ideal:720},focusMode:"continuous"}};
-  const chosen = document.getElementById('cameraSelect').value;
+  const chosen = cameraSelect.value;
   if(chosen) constraints.video.deviceId = { exact: chosen };
 
   stream=await navigator.mediaDevices.getUserMedia(constraints).catch(()=>null);
-  if(!stream){ alert('Fotocamera non disponibile o permesso negato.'); document.getElementById('cameraArea').style.display='none'; return; }
-  track=stream.getVideoTracks()[0]; document.getElementById('video').srcObject=stream; await document.getElementById('video').play(); setupControls(track);
+  if(!stream){ alert('Fotocamera non disponibile o permesso negato.'); cameraArea.style.display='none'; return; }
+  track=stream.getVideoTracks()[0]; video.srcObject=stream; await video.play(); setupControls(track);
 
   const detector=new BarcodeDetector({formats:['qr_code','code_128','ean_13','ean_8','upc_a','code_39']});
-  const ctx=document.getElementById('overlay').getContext('2d');
+  const ctx=overlay.getContext('2d');
 
   const loop=()=>{
     if(!stream){return;}
-    const video=document.getElementById('video'), overlay=document.getElementById('overlay'), guide=document.getElementById('guide'), laser=document.getElementById('laser');
     if(video.readyState<2){ requestAnimationFrame(loop); return; }
     overlay.width=video.videoWidth; overlay.height=video.videoHeight; ctx.clearRect(0,0,overlay.width,overlay.height);
 
@@ -537,11 +600,11 @@ async function startDetectorHybrid(){
 /* ZXing fallback */
 async function startZXingHybrid(){
   const constraints={video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}};
-  const chosen = document.getElementById('cameraSelect').value;
+  const chosen = cameraSelect.value;
   if(chosen) constraints.video.deviceId = { exact: chosen };
 
   const s=await navigator.mediaDevices.getUserMedia(constraints).catch(()=>null);
-  if(!s){ alert('Fotocamera non disponibile o permesso negato.'); document.getElementById('cameraArea').style.display='none'; return; }
+  if(!s){ alert('Fotocamera non disponibile o permesso negato.'); cameraArea.style.display='none'; return; }
   stream=s; track=stream.getVideoTracks()[0]; setupControls(track);
 
   const vid=document.createElement('video');
@@ -576,7 +639,7 @@ function pointInGuideZXing(result,vidEl){
     const offX=(vrect.width-dispW)/2, offY=(vrect.height-dispH)/2;
 
     const domX=offX+cx*scale, domY=offY+cy*scale;
-    const g2=document.getElementById('laser').getBoundingClientRect();
+    const g2=laser.getBoundingClientRect();
     const lx=g2.left-vrect.left+g2.width/2, ly=g2.top-vrect.top+g2.height/2;
     const dist=Math.sqrt((domX-lx)**2+(domY-ly)**2);
     return (dist < g2.width/2);
@@ -587,14 +650,13 @@ function pointInGuideZXing(result,vidEl){
 function processScan(text){
   const val = sanitize(text,128);
   if(mode==='list') expected = val; else scanned = val;
-  stopStream(); document.getElementById('cameraArea').style.display='none'; updateUI();
+  stopStream(); cameraArea.style.display='none'; updateUI();
 }
 
 /* Stop camera */
 function stopStream(){
   try{
-    const v = document.getElementById('video');
-    if(v.srcObject){ v.srcObject.getTracks().forEach(t=>t.stop()); v.srcObject=null; }
+    if(video.srcObject){ video.srcObject.getTracks().forEach(t=>t.stop()); video.srcObject=null; }
     if(track) track.stop();
   }catch(e){}
   status('');
@@ -603,7 +665,6 @@ function stopStream(){
 
 /* LED / Zoom */
 function setupControls(track){
-  const btnTorch=document.getElementById('torch'), btnZoomIn=document.getElementById('zoomIn'), btnZoomOut=document.getElementById('zoomOut');
   btnTorch.disabled=true;
   try{
     const caps=track.getCapabilities?.()||{};
@@ -634,58 +695,8 @@ function setupControls(track){
   }catch(e){}
 }
 
-/* populate camere */
-async function populateCameras(){
-  try{
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    const vids = devices.filter(d=>d.kind==='videoinput');
-    document.getElementById('cameraSelect').innerHTML = '<option value="">(automatico)</option>' +
-      vids.map(v=>`<option value="${v.deviceId}">${v.label||'Fotocamera'}</option>`).join('');
-  }catch(_){}
-}
-if(navigator.mediaDevices?.enumerateDevices){ populateCameras(); }
-
 /* Avvio UI */
-function status(m){ document.getElementById('statusLine').textContent = m||''; }
-function updateUI(){
-  const same = expected && scanned && (norm(expected) === norm(scanned));
-  const stateClass = same ? 'ok' : (expected && scanned ? 'err' : '');
-  const box = (label, val, cls) => `
-    <div class="codeBox ${cls||''}">
-      <div class="codeLabel">${label}</div>
-      <div class="codeValue ${cls||''}">${val ? val : '-'}</div>
-    </div>`;
-  document.getElementById('codes').innerHTML = box('LISTA', expected || '', same ? 'ok' : '') +
-                                               box('PEZZO', scanned  || '', stateClass);
-  if (expected && scanned){
-    if (same){
-      document.getElementById('badge').textContent='✅ CORRETTO';
-      document.getElementById('badge').className='badge ok';
-      document.getElementById('resultText').innerHTML='Match perfetto!';
-      flashScreen('rgba(22,163,74,.5)'); okSound(); speak("Codice corretto",1,1.1,1); vibrate(60);
-      pendingOK = expected;
-      openQtyModal(pendingOK);
-    } else {
-      document.getElementById('badge').textContent='❌ ERRATO';
-      document.getElementById('badge').className='badge err';
-      document.getElementById('resultText').innerHTML='Codice diverso!';
-      flashScreen('rgba(220,38,38,.55)'); errSound(); speak("Errore, codice diverso",0.9,0.8,1); vibrate([60,60,180]);
-      pendingOK=null;
-    }
-  } else {
-    document.getElementById('badge').textContent='Pronto';
-    document.getElementById('badge').className='badge';
-    document.getElementById('resultText').innerHTML='Scansiona prima la <b>LISTA</b>, poi il <b>PEZZO</b>';
-  }
-}
 updateUI();
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
