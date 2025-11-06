@@ -63,6 +63,35 @@
   .cooldown{color:#fecaca}
   .pinRemember{display:flex;align-items:center;gap:8px;justify-content:center;font-size:12px;color:#cbd5e1}
 </style>
+<!-- 🔒 Protezione NO-TIME-TRAVEL -->
+<script>
+(function(){
+  try {
+    const KEY = 'poka_last_time';
+    const last = parseInt(localStorage.getItem(KEY) || '0', 10);
+    const now = Date.now();
+
+    // Se l'orario corrente è più vecchio dell'ultimo registrato ⇒ data retrocessa
+    if (now + 60000 < last) {
+      document.body.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:#000;color:#fff;font-family:system-ui;text-align:center;padding:20px">
+          <h1 style="color:#ef4444">⚠️ Errore di sistema</h1>
+          <p style="max-width:480px;font-size:18px;line-height:1.4">
+            È stato rilevato un cambio data non valido.<br>
+            Riporta la data e l’ora del dispositivo a quelle corrette<br>
+            e riavvia l’applicazione.
+          </p>
+        </div>`;
+      throw new Error("Data retrocessa: accesso bloccato");
+    }
+
+    // Salva l'ora attuale per il prossimo controllo
+    localStorage.setItem(KEY, now.toString());
+  } catch (e) {
+    console.error("Protezione no-time-travel:", e);
+  }
+})();
+</script>
 <script src="https://unpkg.com/@zxing/library@latest"></script>
 <script src="https://unpkg.com/@zxing/browser@latest"></script>
 </head>
