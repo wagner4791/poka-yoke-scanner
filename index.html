@@ -9,27 +9,33 @@
 <script src="https://unpkg.com/@zxing/library@latest"></script>
 <script src="https://unpkg.com/@zxing/browser@latest"></script>
 
-<!-- jsPDF + AutoTable per PDF -->
+<!-- jsPDF per esportazione PDF -->
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 
 <style>
   :root{
-    --bg:#0F172A; --panel:#16223A; --border:#273449; --text:#E6EDF7;
-    --muted:#9FB1CB; --accent:#38BDF8; --ok:#22C55E; --err:#EF4444; --warn:#F59E0B;
+    --bg:#0F172A;        /* sfondo app (blu notte) */
+    --panel:#16223A;     /* pannelli */
+    --border:#273449;    /* bordi */
+    --text:#E6EDF7;      /* testo primario */
+    --muted:#9FB1CB;     /* testo secondario */
+    --accent:#38BDF8;    /* azioni */
+    --ok:#22C55E;        /* successo */
+    --err:#EF4444;       /* errore */
+    --warn:#F59E0B;      /* offline */
   }
+
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:system-ui,Inter,Segoe UI,Roboto,Arial}
   .app{min-height:100%;display:flex;flex-direction:column}
 
+  /* Header + tabs */
   header{padding:12px 16px;border-bottom:1px solid var(--border);background:#0B1325}
   .topbar{display:flex;align-items:center;gap:10px;justify-content:space-between}
   .brand{font-weight:800}
   #netBadge{font-size:12px;padding:4px 8px;border-radius:8px;border:1px solid var(--border)}
   #netBadge.online{background:rgba(34,197,94,.12);color:#86efac;border-color:#14532d}
   #netBadge.offline{background:rgba(245,158,11,.12);color:#FCD34D;border-color:#B45309}
-  .lang{display:flex;gap:8px;align-items:center}
-  .lang select{background:#0d182f;border:1px solid var(--border);border-radius:10px;color:var(--text);padding:6px 10px}
 
   .tabs{display:flex;gap:8px;padding:10px 12px;border-bottom:1px solid var(--border);background:#0E1A32}
   .tab{padding:10px 14px;border-radius:999px;border:1px solid var(--border);color:var(--muted);cursor:pointer;font-weight:700}
@@ -40,6 +46,8 @@
   .view.active{display:block}
 
   .panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px}
+
+  /* Inputs / buttons */
   .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   label.field{display:flex;flex-direction:column;gap:6px;flex:1 1 220px;min-width:200px}
   label.field span{font-size:12px;color:var(--muted)}
@@ -50,6 +58,7 @@
   .btn-ok{background:#0f2a1a;border-color:#14532d}
   .btn-outline{background:#0d182f}
 
+  /* Scanner status */
   .status{display:flex;flex-direction:column;gap:8px;align-items:center;text-align:center}
   .badge{display:inline-block;padding:6px 10px;border-radius:999px;font-weight:800;border:1px solid var(--border)}
   .badge.ok{background:rgba(34,197,94,.15);color:#86efac;border-color:#14532d}
@@ -61,14 +70,17 @@
   .codeValue{flex:1;text-align:right;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-weight:900;letter-spacing:.5px;font-size:clamp(22px,3.6vh,40px);color:var(--text);word-break:break-all}
   .codeBox.ok{border-color:#14532d;background:rgba(34,197,94,.10)}
   .codeBox.err{border-color:#7f1d1d;background:rgba(239,68,68,.08)}
-  .codeValue.ok{color:#86efac}.codeValue.err{color:#fecaca}
+  .codeValue.ok{color:#86efac}
+  .codeValue.err{color:#fecaca}
 
+  /* Righe raccolte */
   #righeBox{max-height:50vh;overflow:auto;border:1px solid var(--border);border-radius:10px}
   table{width:100%;border-collapse:collapse}
   th,td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:14px}
   th{position:sticky;top:0;background:#0f1b35;text-align:left;font-weight:800}
   .countPill{margin-left:8px;font-size:12px;padding:3px 8px;border-radius:10px;background:#0d2230;border:1px solid var(--border);color:var(--muted)}
 
+  /* Fullscreen camera overlay */
   #camFS{position:fixed;inset:0;display:none;background:#000;z-index:9999}
   #camFS.active{display:block}
   .camTop{position:absolute;top:0;left:0;right:0;height:56px;display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:linear-gradient(to bottom, rgba(0,0,0,.65), rgba(0,0,0,.0))}
@@ -77,8 +89,9 @@
   #video{position:absolute;inset:0;object-fit:cover;width:100%;height:100%}
   #overlay{position:absolute;inset:0;pointer-events:none}
   #guide{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:34%;height:34%;border:3px solid rgba(255,255,255,.95);border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.35) inset;pointer-events:none}
-  #laser{position:absolute;left:50%;top:50%;width:54px;height:54px;border:2px solid rgba(255,60,60,.9);border-radius:50%;transform:translate(-50%,-50%)}
+  #laser{position:absolute;left:50%;top:50%;width:54px;height:54px;border:2px solid rgba(255,60,60,.9);border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 12px rgba(255,60,60,.85);pointer-events:none}
 
+  /* Modale quantità */
   #qtyModal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:10000}
   .modalCard{background:#0b162c;border:1px solid var(--border);border-radius:14px;padding:16px;min-width:280px;max-width:92vw;box-shadow:0 10px 30px rgba(0,0,0,.6)}
   .modalTitle{font-weight:800;margin-bottom:8px}
@@ -86,10 +99,14 @@
   .qtyBtn{padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:#0f203c;color:var(--text);font-weight:800;font-size:20px;cursor:pointer}
   .qtyInput{width:110px;text-align:center;font-size:22px;font-weight:900;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:#0f1b35;color:var(--text)}
   .modalActions{display:flex;gap:10px;justify-content:flex-end;margin-top:8px}
-  .muted{color:var(--muted)}
+
+  /* Toast */
   #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);min-width:220px;max-width:90vw;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:#0d2230;color:var(--text);display:none;z-index:10001;text-align:center;font-weight:700}
   #toast.ok{background:rgba(34,197,94,.15);border-color:#14532d;color:#86efac}
   #toast.err{background:rgba(239,68,68,.15);border-color:#7f1d1d;color:#fecaca}
+
+  /* Small text */
+  .muted{color:var(--muted)}
 </style>
 </head>
 
@@ -98,23 +115,16 @@
   <header>
     <div class="topbar">
       <div class="brand">Poka-Yoke PRO • Scanner IBRIDO</div>
-      <div class="lang">
-        <span id="netBadge" class="offline">Offline</span>
-        <select id="langSelect">
-          <option value="it">Italiano</option>
-          <option value="pt">Português (BR)</option>
-          <option value="en">English</option>
-          <option value="ur">اردو</option>
-        </select>
-      </div>
+      <span id="netBadge" class="offline">Offline</span>
     </div>
   </header>
 
+  <!-- Tabs -->
   <div class="tabs">
-    <button class="tab active" data-tab="commessa" data-i18n="tab_commessa">Commessa</button>
-    <button class="tab" data-tab="scanner" data-i18n="tab_scanner">Scanner</button>
-    <button class="tab" data-tab="righe" data-i18n="tab_righe">Righe raccolte</button>
-    <button class="tab" data-tab="impostazioni" data-i18n="tab_impostazioni">Impostazioni</button>
+    <button class="tab active" data-tab="commessa">Commessa</button>
+    <button class="tab" data-tab="scanner">Scanner</button>
+    <button class="tab" data-tab="righe">Righe raccolte</button>
+    <button class="tab" data-tab="impostazioni">Impostazioni</button>
   </div>
 
   <main>
@@ -123,44 +133,45 @@
       <div class="panel">
         <div class="row">
           <label class="field">
-            <span data-i18n="lbl_operatore">Operatore</span>
-            <input id="operatoreInput" class="input" placeholder="Nome e cognome"/>
+            <span>Operatore</span>
+            <input id="operatoreInput" class="input" placeholder="Es. Junior" autocomplete="off"/>
           </label>
           <label class="field">
-            <span data-i18n="lbl_commessa">Numero commessa</span>
+            <span>Numero commessa</span>
             <input id="commessaInput" class="input" placeholder="Es. 024830" autocomplete="off"/>
           </label>
           <label class="field">
-            <span data-i18n="lbl_posizione">Posizione</span>
+            <span>Posizione</span>
             <input id="posizioneInput" class="input" placeholder="Es. POS 0020" autocomplete="off"/>
           </label>
           <label class="field" style="min-width:200px;flex:1 1 260px">
-            <span data-i18n="lbl_camera">Fotocamera</span>
+            <span>Fotocamera</span>
             <select id="cameraSelect" class="input">
               <option value="">(automatica)</option>
             </select>
           </label>
         </div>
         <div class="row" style="margin-top:10px">
-          <button id="goScanner" class="btn btn-primary" data-i18n="btn_goscanner">Vai allo Scanner</button>
+          <button id="goScanner" class="btn btn-primary">Vai allo Scanner</button>
         </div>
       </div>
-      <div class="panel muted" data-i18n="hint_persist">Suggerimento: compila una volta sola; i dati restano salvati sul dispositivo.</div>
+      <div class="panel muted">Suggerimento: Operatore, Commessa e Posizione restano salvati sul dispositivo.</div>
     </section>
 
     <!-- SCANNER -->
     <section id="scanner" class="view">
       <div class="panel status">
         <div id="badge" class="badge">Pronto</div>
-        <div id="resultText" data-i18n-html="txt_istruzioni">Scansiona prima la <b>LISTA</b>, poi il <b>PEZZO</b></div>
+        <div id="resultText">Scansiona prima la <b>LISTA</b>, poi il <b>PEZZO</b></div>
         <div id="codes"></div>
-        <div class="muted" data-i18n-html="txt_help">Allinea il codice nel <b>quadrato</b> e centra nel cerchio rosso 🔴.</div>
+        <div class="muted">Allinea il codice nel <b>quadrato</b> e centra nel cerchio rosso 🔴.</div>
       </div>
+
       <div class="panel">
         <div class="row">
-          <button id="scanList" class="btn btn-primary" data-i18n="btn_lista">📋 LISTA (fullscreen)</button>
-          <button id="scanItem" class="btn btn-primary" data-i18n="btn_pezzo">📦 PEZZO (fullscreen)</button>
-          <button id="reset" class="btn btn-outline" data-i18n="btn_reset">🔄 Reset</button>
+          <button id="scanList" class="btn btn-primary">📋 LISTA (fullscreen)</button>
+          <button id="scanItem" class="btn btn-primary">📦 PEZZO (fullscreen)</button>
+          <button id="reset" class="btn btn-outline">🔄 Reset</button>
         </div>
       </div>
     </section>
@@ -169,22 +180,16 @@
     <section id="righe" class="view">
       <div class="panel">
         <div class="row" style="justify-content:space-between">
-          <div style="font-weight:800"><span data-i18n="tit_righe">Righe raccolte</span> <span class="countPill" id="countPill">0</span></div>
+          <div style="font-weight:800">Righe raccolte <span class="countPill" id="countPill">0</span></div>
           <div class="row" style="gap:8px">
-            <button id="scaricaCSV" class="btn btn-outline" disabled data-i18n="btn_csv">⬇️ Scarica CSV</button>
-            <button id="scaricaPDF" class="btn btn-outline" disabled data-i18n="btn_pdf">⬇️ Scarica PDF</button>
-            <button id="svuota" class="btn btn-outline" disabled data-i18n="btn_svuota">🗑️ Svuota</button>
+            <button id="scaricaPDF" class="btn btn-outline" disabled>🧾 Scarica PDF</button>
+            <button id="scaricaCSV" class="btn btn-outline" disabled>⬇️ Scarica CSV</button>
+            <button id="svuota" class="btn btn-outline" disabled>🗑️ Svuota</button>
           </div>
         </div>
         <div id="righeBox" style="margin-top:10px">
           <table>
-            <thead><tr>
-              <th data-i18n="th_ora">Ora</th>
-              <th data-i18n="th_codice">Codice</th>
-              <th data-i18n="th_qta">Q.tà</th>
-              <th data-i18n="th_commessa">Commessa</th>
-              <th data-i18n="th_posizione">Posizione</th>
-            </tr></thead>
+            <thead><tr><th>Ora</th><th>Codice</th><th>Q.tà</th><th>Commessa</th><th>Posizione</th></tr></thead>
             <tbody id="righeBody"></tbody>
           </table>
         </div>
@@ -194,32 +199,32 @@
     <!-- IMPOSTAZIONI -->
     <section id="impostazioni" class="view">
       <div class="panel">
-        <div style="font-weight:800;margin-bottom:8px" data-i18n="tit_impostazioni">Impostazioni</div>
+        <div style="font-weight:800;margin-bottom:8px">Impostazioni</div>
         <div class="row">
           <label class="field" style="flex:0 0 260px">
-            <span data-i18n="opt_confirm">Conferma doppia</span>
+            <span>Conferma doppia</span>
             <select id="optConfirm" class="input">
-              <option value="on" selected data-i18n="opt_on">Attiva (più sicuro)</option>
-              <option value="off" data-i18n="opt_off">Disattiva (più veloce)</option>
+              <option value="on" selected>Attiva (più sicuro)</option>
+              <option value="off">Disattiva (più veloce)</option>
             </select>
           </label>
           <label class="field" style="flex:0 0 260px">
-            <span data-i18n="opt_voice">Annuncio vocale</span>
+            <span>Annuncio vocale</span>
             <select id="optVoice" class="input">
-              <option value="on" selected data-i18n="opt_attivo">Attivo</option>
-              <option value="off" data-i18n="opt_disattivo">Disattivo</option>
+              <option value="on" selected>Attivo</option>
+              <option value="off">Disattivo</option>
             </select>
           </label>
           <label class="field" style="flex:0 0 260px">
-            <span data-i18n="opt_vibrate">Vibrazione</span>
+            <span>Vibrazione</span>
             <select id="optVibrate" class="input">
-              <option value="on" selected data-i18n="opt_attiva">Attiva</option>
-              <option value="off" data-i18n="opt_disattiva">Disattiva</option>
+              <option value="on" selected>Attiva</option>
+              <option value="off">Disattiva</option>
             </select>
           </label>
         </div>
       </div>
-      <div class="panel muted" data-i18n="foot_ui">Versione UI: 1.1 • Solo locale (nessun invio in rete). Aggiungi alla Home per esperienza tipo app.</div>
+      <div class="panel muted">Versione UI: 1.0 • Solo locale (nessun invio in rete). Aggiungi alla Home per esperienza tipo app.</div>
     </section>
   </main>
 </div>
@@ -227,8 +232,8 @@
 <!-- Fullscreen Camera -->
 <div id="camFS">
   <div class="camTop">
-    <button id="camClose" class="camBtn" data-i18n="btn_chiudi">✕ Chiudi</button>
-    <div id="camHint" class="camBtn" style="pointer-events:none" data-i18n="hint_scan">Inquadra e centra nel cerchio</div>
+    <button id="camClose" class="camBtn">✕ Chiudi</button>
+    <div id="camHint" class="camBtn" style="pointer-events:none">Inquadra e centra nel cerchio</div>
   </div>
   <div class="camWrap">
     <video id="video" muted playsinline></video>
@@ -241,277 +246,396 @@
 <!-- Modale quantità -->
 <div id="qtyModal">
   <div class="modalCard">
-    <div class="modalTitle" data-i18n="mod_titolo">Inserisci quantità prelevata</div>
+    <div class="modalTitle">Inserisci quantità prelevata</div>
     <div id="qtyInfo" class="muted" style="margin-bottom:6px"></div>
     <div class="qtyRow">
       <button id="qtyMinus" class="qtyBtn">−</button>
-      <input id="qtyInput" class="qtyInput" type="number" min="1" step="1" placeholder=""/>
+      <input id="qtyInput" class="qtyInput" type="number" min="1" step="1" value="" />
       <button id="qtyPlus" class="qtyBtn">+</button>
     </div>
     <div class="modalActions">
-      <button id="qtyCancel" class="btn btn-outline" data-i18n="btn_annulla">Annulla</button>
-      <button id="qtyOk" class="btn btn-ok" disabled data-i18n="btn_conferma">Conferma</button>
+      <button id="qtyCancel" class="btn btn-outline">Annulla</button>
+      <button id="qtyOk" class="btn btn-ok">Conferma</button>
     </div>
   </div>
 </div>
 
+<!-- Toast -->
 <div id="toast"></div>
 
 <script>
-/* ===== i18n (PT/IT/EN/UR) ===== */
-const I18N = {
-  it:{
-    tab_commessa:"Commessa", tab_scanner:"Scanner", tab_righe:"Righe raccolte", tab_impostazioni:"Impostazioni",
-    lbl_operatore:"Operatore", lbl_commessa:"Numero commessa", lbl_posizione:"Posizione", lbl_camera:"Fotocamera",
-    btn_goscanner:"Vai allo Scanner", hint_persist:"Suggerimento: compila una volta sola; i dati restano salvati sul dispositivo.",
-    txt_istruzioni:"Scansiona prima la <b>LISTA</b>, poi il <b>PEZZO</b>", txt_help:"Allinea il codice nel <b>quadrato</b> e centra nel cerchio rosso 🔴.",
-    btn_lista:"📋 LISTA (fullscreen)", btn_pezzo:"📦 PEZZO (fullscreen)", btn_reset:"🔄 Reset",
-    tit_righe:"Righe raccolte", btn_csv:"⬇️ Scarica CSV", btn_pdf:"⬇️ Scarica PDF", btn_svuota:"🗑️ Svuota",
-    th_ora:"Ora", th_codice:"Codice", th_qta:"Q.tà", th_commessa:"Commessa", th_posizione:"Posizione",
-    tit_impostazioni:"Impostazioni", opt_confirm:"Conferma doppia", opt_on:"Attiva (più sicuro)", opt_off:"Disattiva (più veloce)",
-    opt_voice:"Annuncio vocale", opt_attivo:"Attivo", opt_disattivo:"Disattivo", opt_vibrate:"Vibrazione", opt_attiva:"Attiva", opt_disattiva:"Disattiva",
-    foot_ui:"Versione UI: 1.1 • Solo locale (nessun invio in rete). Aggiungi alla Home per esperienza tipo app.",
-    btn_chiudi:"✕ Chiudi", hint_scan:"Inquadra e centra nel cerchio",
-    mod_titolo:"Inserisci quantità prelevata", btn_annulla:"Annulla", btn_conferma:"Conferma",
-    toast_added:"Riga aggiunta", toast_cleared:"Sessione svuotata",
-    err_fields:"Inserisci Operatore, Numero commessa e Posizione prima di scansionare."
-  },
-  pt:{
-    tab_commessa:"Pedido", tab_scanner:"Scanner", tab_righe:"Linhas coletadas", tab_impostazioni:"Config.",
-    lbl_operatore:"Operador", lbl_commessa:"Nº do pedido", lbl_posizione:"Posição", lbl_camera:"Câmera",
-    btn_goscanner:"Ir para o Scanner", hint_persist:"Dica: preencha uma vez; os dados ficam salvos no dispositivo.",
-    txt_istruzioni:"Escaneie primeiro a <b>LISTA</b>, depois a <b>PEÇA</b>", txt_help:"Alinhe o código no <b>quadrado</b> e centralize no círculo vermelho 🔴.",
-    btn_lista:"📋 LISTA (tela cheia)", btn_pezzo:"📦 PEÇA (tela cheia)", btn_reset:"🔄 Resetar",
-    tit_righe:"Linhas coletadas", btn_csv:"⬇️ Baixar CSV", btn_pdf:"⬇️ Baixar PDF", btn_svuota:"🗑️ Esvaziar",
-    th_ora:"Hora", th_codice:"Código", th_qta:"Qtd.", th_commessa:"Pedido", th_posizione:"Posição",
-    tit_impostazioni:"Configurações", opt_confirm:"Confirmação dupla", opt_on:"Ativar (mais seguro)", opt_off:"Desativar (mais rápido)",
-    opt_voice:"Anúncio de voz", opt_attivo:"Ativo", opt_disattivo:"Inativo", opt_vibrate:"Vibração", opt_attiva:"Ativar", opt_disattiva:"Desativar",
-    foot_ui:"Versão UI: 1.1 • Somente local (sem internet). Adicione à Tela Inicial para modo app.",
-    btn_chiudi:"✕ Fechar", hint_scan:"Aponte e centralize no círculo",
-    mod_titolo:"Insira a quantidade retirada", btn_annulla:"Cancelar", btn_conferma:"Confirmar",
-    toast_added:"Linha adicionada", toast_cleared:"Sessão esvaziada",
-    err_fields:"Preencha Operador, Nº do pedido e Posição antes de escanear."
-  },
-  en:{
-    tab_commessa:"Job", tab_scanner:"Scanner", tab_righe:"Collected rows", tab_impostazioni:"Settings",
-    lbl_operatore:"Operator", lbl_commessa:"Job number", lbl_posizione:"Position", lbl_camera:"Camera",
-    btn_goscanner:"Go to Scanner", hint_persist:"Tip: fill it once; data stays on this device.",
-    txt_istruzioni:"Scan the <b>LIST</b> first, then the <b>ITEM</b>", txt_help:"Align the code in the <b>square</b> and center in the red circle 🔴.",
-    btn_lista:"📋 LIST (fullscreen)", btn_pezzo:"📦 ITEM (fullscreen)", btn_reset:"🔄 Reset",
-    tit_righe:"Collected rows", btn_csv:"⬇️ Download CSV", btn_pdf:"⬇️ Download PDF", btn_svuota:"🗑️ Clear",
-    th_ora:"Time", th_codice:"Code", th_qta:"Qty", th_commessa:"Job", th_posizione:"Position",
-    tit_impostazioni:"Settings", opt_confirm:"Double confirm", opt_on:"Enable (safer)", opt_off:"Disable (faster)",
-    opt_voice:"Voice announcement", opt_attivo:"On", opt_disattivo:"Off", opt_vibrate:"Vibration", opt_attiva:"On", opt_disattiva:"Off",
-    foot_ui:"UI version: 1.1 • Local only (no network). Add to Home for app-like experience.",
-    btn_chiudi:"✕ Close", hint_scan:"Aim and center in the circle",
-    mod_titolo:"Enter picked quantity", btn_annulla:"Cancel", btn_conferma:"Confirm",
-    toast_added:"Row added", toast_cleared:"Session cleared",
-    err_fields:"Enter Operator, Job number and Position before scanning."
-  },
-  ur:{
-    tab_commessa:"آرڈر", tab_scanner:"اسکینر", tab_righe:"اکٹھی قطاریں", tab_impostazioni:"سیٹنگز",
-    lbl_operatore:"آپریٹر", lbl_commessa:"آرڈر نمبر", lbl_posizione:"پوزیشن", lbl_camera:"کیمرہ",
-    btn_goscanner:"اسکینر پر جائیں", hint_persist:"مشورہ: ایک بار بھر دیں؛ ڈیٹا اسی ڈیوائس میں محفوظ رہے گا۔",
-    txt_istruzioni:"پہلے <b>لسٹ</b> اسکین کریں، پھر <b>پیِسو</b>", txt_help:"کوڈ کو <b>مربع</b> میں سیدھا کریں اور سرخ دائرے میں مرکز کریں 🔴۔",
-    btn_lista:"📋 لسٹ (فل اسکرین)", btn_pezzo:"📦 پیسو (فل اسکرین)", btn_reset:"🔄 ری سیٹ",
-    tit_righe:"اکٹھی قطاریں", btn_csv:"⬇️ CSV ڈاؤن لوڈ", btn_pdf:"⬇️ PDF ڈاؤن لوڈ", btn_svuota:"🗑️ خالی کریں",
-    th_ora:"وقت", th_codice:"کوڈ", th_qta:"تعداد", th_commessa:"آرڈر", th_posizione:"پوزیشن",
-    tit_impostazioni:"سیٹنگز", opt_confirm:"ڈبل کنفرم", opt_on:"آن (محفوظ)", opt_off:"آف (تیز)",
-    opt_voice:"وائس اعلان", opt_attivo:"آن", opt_disattivo:"آف", opt_vibrate:"وائبریشن", opt_attiva:"آن", opt_disattiva:"آف",
-    foot_ui:"UI 1.1 • صرف مقامی۔ ایپ جیسے تجربہ کے لیے ہوم میں شامل کریں۔",
-    btn_chiudi:"✕ بند کریں", hint_scan:"ٹارگٹ کریں اور دائرے کے مرکز میں لائیں",
-    mod_titolo:"پک کی گئی مقدار درج کریں", btn_annulla:"منسوخ", btn_conferma:"تصدیق",
-    toast_added:"صف شامل ہوئی", toast_cleared:"سیشن خالی",
-    err_fields:"اسکین سے پہلے آپریٹر، آرڈر نمبر اور پوزیشن درج کریں۔"
-  }
-};
-const LS_LANG='poka_lang_v1';
-function applyI18n(lang){
-  const tr=I18N[lang]||I18N.it;
-  document.querySelectorAll('[data-i18n]').forEach(n=>{ n.textContent=tr[n.dataset.i18n]||n.textContent; });
-  document.querySelectorAll('[data-i18n-html]').forEach(n=>{ n.innerHTML=tr[n.dataset.i18nHtml]||n.innerHTML; });
+/* ===== Stato rete (solo badge) ===== */
+const netBadge = document.getElementById('netBadge');
+function setNetBadge(){
+  const on = navigator.onLine;
+  netBadge.textContent = on ? 'Online' : 'Offline';
+  netBadge.className = on ? 'online' : 'offline';
 }
-const langSel=document.getElementById('langSelect');
-langSel.addEventListener('change',()=>{ localStorage.setItem(LS_LANG,langSel.value); applyI18n(langSel.value); });
-langSel.value = localStorage.getItem(LS_LANG)||'it'; applyI18n(langSel.value);
+window.addEventListener('online', setNetBadge);
+window.addEventListener('offline', setNetBadge);
+setNetBadge();
 
-/* ===== Stato rete ===== */
-const netBadge=document.getElementById('netBadge');
-function setNetBadge(){ const on=navigator.onLine; netBadge.textContent=on?'Online':'Offline'; netBadge.className=on?'online':'offline';}
-window.addEventListener('online',setNetBadge);window.addEventListener('offline',setNetBadge);setNetBadge();
-
-/* ===== Helper ===== */
-const $=id=>document.getElementById(id);
-const tabs=Array.from(document.querySelectorAll('.tab'));
-const views={commessa:$('commessa'),scanner:$('scanner'),righe:$('righe'),impostazioni:$('impostazioni')};
-function activateTab(name){ tabs.forEach(t=>t.classList.toggle('active',t.dataset.tab===name)); Object.entries(views).forEach(([k,el])=>el.classList.toggle('active',k===name)); }
-tabs.forEach(t=> t.addEventListener('click',()=>activateTab(t.dataset.tab)));
-$('goScanner').addEventListener('click',()=>activateTab('scanner'));
+/* ===== Helper generali ===== */
+const $ = id => document.getElementById(id);
+const tabs = Array.from(document.querySelectorAll('.tab'));
+const views = {
+  commessa: $('commessa'),
+  scanner: $('scanner'),
+  righe: $('righe'),
+  impostazioni: $('impostazioni')
+};
+function activateTab(name){
+  tabs.forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
+  Object.entries(views).forEach(([k,el])=> el.classList.toggle('active', k===name));
+}
+tabs.forEach(t=> t.addEventListener('click', ()=> activateTab(t.dataset.tab)));
+$('goScanner').addEventListener('click', ()=> activateTab('scanner'));
 
 /* ===== Stato app ===== */
-let expected=null, scanned=null, mode=null, pendingOK=null, confirmBuf=[], lastVal=null, lastScanTs=0;
-let picks=[];
+let expected=null, scanned=null, mode=null;
+let picks=[]; // {ts, codice, qty, commessa, posizione}
+let pendingOK=null;
+let confirmBuf=[], lastVal=null;
+let lastScanTs=0;
 
-/* ===== Settings + Persist ===== */
-const LSKEY_SETTINGS='poka_settings_v1', LSKEY_SESSION='poka_session_v1';
-const settings={confirm:true,voice:true,vibrate:true};
-function loadSettings(){ try{Object.assign(settings,JSON.parse(localStorage.getItem(LSKEY_SETTINGS)||'{}'));}catch{} 
-  $('optConfirm').value=settings.confirm?'on':'off'; $('optVoice').value=settings.voice?'on':'off'; $('optVibrate').value=settings.vibrate?'on':'off';}
-function saveSettings(){ localStorage.setItem(LSKEY_SETTINGS,JSON.stringify(settings)); }
-$('optConfirm').onchange=e=>{settings.confirm=(e.target.value==='on');saveSettings();};
-$('optVoice').onchange=e=>{settings.voice=(e.target.value==='on');saveSettings();};
-$('optVibrate').onchange=e=>{settings.vibrate=(e.target.value==='on');saveSettings();};
+/* ===== Impostazioni (localStorage) ===== */
+const LSKEY_SETTINGS='poka_settings_v1';
+const LSKEY_SESSION='poka_session_v1';
+const LSKEY_PICKS='poka_picks_v1';
+const settings = { confirm:true, voice:true, vibrate:true };
 
+function loadSettings(){
+  try{
+    const s = JSON.parse(localStorage.getItem(LSKEY_SETTINGS)||'{}');
+    Object.assign(settings, s);
+  }catch{}
+  $('optConfirm').value = settings.confirm ? 'on':'off';
+  $('optVoice').value = settings.voice ? 'on':'off';
+  $('optVibrate').value = settings.vibrate ? 'on':'off';
+}
+function saveSettings(){
+  localStorage.setItem(LSKEY_SETTINGS, JSON.stringify(settings));
+}
+$('optConfirm').addEventListener('change', e=>{ settings.confirm = (e.target.value==='on'); saveSettings(); });
+$('optVoice').addEventListener('change', e=>{ settings.voice = (e.target.value==='on'); saveSettings(); });
+$('optVibrate').addEventListener('change', e=>{ settings.vibrate = (e.target.value==='on'); saveSettings(); });
+
+/* ===== Commessa/posizione/operatore (persist) ===== */
 function sanitize(s,max=64){return String(s||'').replace(/[^\w\-\. \/]/g,'').slice(0,max)}
-function loadSessionFields(){ try{const s=JSON.parse(localStorage.getItem(LSKEY_SESSION)||'{}');
-  $('operatoreInput').value=s.operatore||''; $('commessaInput').value=s.commessa||''; $('posizioneInput').value=s.posizione||'';}catch{} }
-function saveSessionFields(){ const data={operatore:sanitize($('operatoreInput').value,64),commessa:sanitize($('commessaInput').value,64),posizione:sanitize($('posizioneInput').value,64)}; localStorage.setItem(LSKEY_SESSION,JSON.stringify(data)); }
-['operatoreInput','commessaInput','posizioneInput'].forEach(id=>$(id).addEventListener('change',saveSessionFields));
+function loadSessionFields(){
+  try{
+    const s = JSON.parse(localStorage.getItem(LSKEY_SESSION)||'{}');
+    $('operatoreInput').value = s.operatore||'';
+    $('commessaInput').value = s.commessa||'';
+    $('posizioneInput').value = s.posizione||'';
+  }catch{}
+}
+function saveSessionFields(){
+  const data = {
+    operatore: sanitize($('operatoreInput').value,64),
+    commessa: sanitize($('commessaInput').value,64),
+    posizione: sanitize($('posizioneInput').value,64)
+  };
+  localStorage.setItem(LSKEY_SESSION, JSON.stringify(data));
+}
+['operatoreInput','commessaInput','posizioneInput'].forEach(id=>{
+  $(id).addEventListener('change', saveSessionFields);
+});
 
-/* ===== Audio/Voce/Vibra ===== */
-let actx; function tone(f=880,d=120,t='sine',v=.25){try{if(!actx)actx=new (window.AudioContext||window.webkitAudioContext)();const o=actx.createOscillator(),g=actx.createGain();o.type=t;o.frequency.value=f;g.gain.value=v;o.connect(g);g.connect(actx.destination);o.start();setTimeout(()=>o.stop(),d);}catch(e){}}
+/* ===== Audio/voce/vibrazione ===== */
+let actx;
+function tone(f=880,d=120,t='sine',v=.25){try{if(!actx)actx=new (window.AudioContext||window.webkitAudioContext)();const o=actx.createOscillator(),g=actx.createGain();o.type=t;o.frequency.value=f;g.gain.value=v;o.connect(g);g.connect(actx.destination);o.start();setTimeout(()=>o.stop(),d);}catch(e){}}
 function okSound(){tone(900,120);setTimeout(()=>tone(1200,140),130)}
 function errSound(){tone(250,220,'square',.22);setTimeout(()=>tone(180,230,'square',.20),200)}
-function speak(msg){ if(!settings.voice) return; try{ const u=new SpeechSynthesisUtterance(msg); u.lang= (langSel.value==='pt'?'pt-BR':langSel.value==='en'?'en-US':langSel.value==='ur'?'ur-PK':'it-IT'); speechSynthesis.cancel(); speechSynthesis.speak(u);}catch(e){} }
+function speak(msg){ if(!settings.voice) return; try{ const u=new SpeechSynthesisUtterance(msg); u.lang='it-IT'; speechSynthesis.cancel(); speechSynthesis.speak(u);}catch(e){} }
 function vibrate(p){ if(settings.vibrate && navigator.vibrate) navigator.vibrate(p) }
 
 /* ===== UI scanner ===== */
-const codesEl=$('codes'), badge=$('badge'), resultText=$('resultText');
+const codesEl = $('codes'), badge=$('badge'), resultText=$('resultText');
 function norm(s){return s?String(s).trim().toUpperCase():s}
-function box(label,val,cls){return `<div class="codeBox ${cls||''}"><div class="codeLabel">${label}</div><div class="codeValue ${cls||''}">${val?val:'-'}</div></div>`;}
+function box(label,val,cls){
+  return `<div class="codeBox ${cls||''}">
+    <div class="codeLabel">${label}</div>
+    <div class="codeValue ${cls||''}">${val?val:'-'}</div>
+  </div>`;
+}
 function updateUI(){
-  const same=expected && scanned && (norm(expected)===norm(scanned));
+  const same = expected && scanned && (norm(expected)===norm(scanned));
   const stateClass = same ? 'ok' : (expected && scanned ? 'err' : '');
-  const L = I18N[langSel.value]||I18N.it;
   codesEl.innerHTML = box('LISTA', expected||'', same?'ok':'') + box('PEZZO', scanned||'', stateClass);
+
   if(expected && scanned){
     if(same){
-      badge.textContent='✅ CORRETTO'; badge.className='badge ok'; resultText.innerHTML=L.txt_istruzioni;
-      okSound(); speak(langSel.value==='en'?'Code ok':langSel.value==='pt'?'Código correto':langSel.value==='ur'?'کوڈ درست':'Codice corretto'); vibrate(60);
-      pendingOK=expected; openQtyModal(pendingOK);
+      badge.textContent='✅ CORRETTO'; badge.className='badge ok';
+      resultText.innerHTML='Match perfetto!';
+      okSound(); if(settings.voice) speak('Codice corretto'); vibrate(60);
+      pendingOK = expected;
+      openQtyModal(pendingOK);
     }else{
-      badge.textContent='❌ ERRATO'; badge.className='badge err'; resultText.innerHTML=L.txt_istruzioni;
-      errSound(); speak(langSel.value==='en'?'Different code':langSel.value==='pt'?'Código diferente':langSel.value==='ur'?'مختلف کوڈ':'Codice diverso'); vibrate([60,60,180]);
+      badge.textContent='❌ ERRATO'; badge.className='badge err';
+      resultText.innerHTML='Codice diverso!';
+      errSound(); if(settings.voice) speak('Errore, codice diverso'); vibrate([60,60,180]);
       pendingOK=null;
     }
-  }else{ badge.textContent='Pronto'; badge.className='badge'; resultText.innerHTML=L.txt_istruzioni; }
+  }else{
+    badge.textContent='Pronto'; badge.className='badge';
+    resultText.innerHTML='Scansiona prima la <b>LISTA</b>, poi il <b>PEZZO</b>';
+  }
 }
 
 /* ===== Toast ===== */
 const toast=$('toast'); let toastTimer=null;
-function showToast(text,kind='ok',ms=1800){ toast.textContent=text; toast.className=''; toast.classList.add(kind); toast.style.display='block'; clearTimeout(toastTimer); toastTimer=setTimeout(()=>toast.style.display='none',ms); }
+function showToast(text,kind='ok',ms=1800){
+  toast.textContent=text; toast.className=''; toast.classList.add(kind); toast.style.display='block';
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=> toast.style.display='none', ms);
+}
 
-/* ===== Righe ===== */
+/* ===== Tab Righe ===== */
 function renderRighe(){
   const tb=$('righeBody');
-  tb.innerHTML=picks.map(p=>{const hh=p.ts.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}); return `<tr><td>${hh}</td><td>${p.codice}</td><td>${p.qty}</td><td>${p.commessa||'-'}</td><td>${p.posizione||'-'}</td></tr>`;}).join('');
-  $('scaricaCSV').disabled = $('scaricaPDF').disabled = picks.length===0;
-  $('svuota').disabled = picks.length===0;
-  $('countPill').textContent=String(picks.length);
+  tb.innerHTML = picks.map(p=>{
+    const hh=p.ts.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    return `<tr><td>${hh}</td><td>${p.codice}</td><td>${p.qty}</td><td>${p.commessa||'-'}</td><td>${p.posizione||'-'}</td></tr>`;
+  }).join('');
+  const has=picks.length>0;
+  $('scaricaCSV').disabled = !has;
+  $('scaricaPDF').disabled = !has;
+  $('svuota').disabled = !has;
+  $('countPill').textContent = String(picks.length);
 }
 function toCSV(){
   const head='timestamp_ms,iso,codice,quantita,commessa,posizione\n';
-  const body=picks.map(p=>[p.ts.getTime(), p.ts.toISOString(), p.codice, p.qty, p.commessa||'', p.posizione||''].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const body=picks.map(p=>{
+    return [p.ts.getTime(), p.ts.toISOString(), p.codice, p.qty, p.commessa||'', p.posizione||'']
+      .map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',');
+  }).join('\n');
   return head+body;
 }
-$('scaricaCSV').onclick=()=>{ if(!picks.length) return; const csv=toCSV(); const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); const op=$('operatoreInput').value||'operatore'; a.href=url; a.download=`scheda_picking_${($('commessaInput').value||'commessa')}_${op}.csv`; a.click(); URL.revokeObjectURL(url); };
-$('svuota').onclick=()=>{ if(!picks.length) return; if(confirm((I18N[langSel.value]||I18N.it).btn_svuota+'?')){ picks=[]; renderRighe(); updateUI(); showToast((I18N[langSel.value]||I18N.it).toast_cleared,'err',1400);} };
+$('scaricaCSV').addEventListener('click', ()=>{
+  if(!picks.length) return;
+  const csv=toCSV();
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=`scheda_picking_${($('commessaInput').value||'commessa')}.csv`; a.click();
+  URL.revokeObjectURL(url);
+});
+$('svuota').addEventListener('click', ()=>{
+  if(!picks.length) return;
+  if(confirm('Sicuro di svuotare la sessione corrente?')){
+    picks=[]; savePicksCache(); renderRighe(); updateUI(); showToast('Sessione svuotata','err',1400);
+  }
+});
 
 /* ===== PDF ===== */
-$('scaricaPDF').onclick=()=>{
+$('scaricaPDF').addEventListener('click', ()=>{
   if(!picks.length) return;
-  const L=I18N[langSel.value]||I18N.it;
+  try{ generatePDF(); }catch(e){ alert('Errore creazione PDF: '+e.message); }
+});
+
+function generatePDF(){
   const { jsPDF } = window.jspdf;
-  const doc=new jsPDF({unit:'pt',format:'a4'});
-  const op=sanitize($('operatoreInput').value,64)||'-';
-  const cm=sanitize($('commessaInput').value,64)||'-';
-  const ps=sanitize($('posizioneInput').value,64)||'-';
-  const now=new Date(); const iso=now.toLocaleString();
+  const doc = new jsPDF({ unit:'pt', format:'a4' });
+  const W = doc.internal.pageSize.getWidth();
+  const M = 36; // margin
 
-  // Header
-  doc.setFont('helvetica','bold'); doc.setFontSize(16);
-  doc.text('Poka-Yoke PRO • Picking',40,40);
-  doc.setFontSize(11); doc.setFont('helvetica','normal');
-  doc.text(`${L.lbl_operatore}: ${op}`,40,62);
-  doc.text(`${L.lbl_commessa}: ${cm}`,40,78);
-  doc.text(`${L.lbl_posizione}: ${ps}`,40,94);
-  doc.text(`Data/Ora: ${iso}`,40,110);
+  const brand = 'Poka-Yoke PRO • Picking';
+  const now = new Date();
+  const info = getHeaderInfo();
+  const totals = getTotals();
 
-  // Tabella
-  const head=[[L.th_ora,L.th_codice,L.th_qta,L.th_commessa,L.th_posizione]];
-  const data=picks.map(p=>[
-    p.ts.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}),
-    p.codice, String(p.qty), p.commessa||'', p.posizione||''
-  ]);
-  doc.autoTable({
-    startY:130, head:head, body:data,
-    styles:{font:'helvetica',fontSize:10,cellPadding:6,lineColor:[39,52,73],lineWidth:0.5},
-    headStyles:{fillColor:[22,34,58],textColor:255},
-    alternateRowStyles:{fillColor:[17,32,61]}
+  /* Header bar (scura) */
+  doc.setFillColor(15,23,42); // #0F172A
+  doc.rect(0,0,W,70,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(255,255,255);
+  doc.text(brand, M, 44);
+
+  /* Box info */
+  doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(230,237,247);
+  const lines = [
+    `Operatore: ${info.operatore || '-'}`,
+    `Commessa: ${info.commessa || '-'}`,
+    `Posizione: ${info.posizione || '-'}`,
+    `Generato: ${now.toLocaleString()}`
+  ];
+  // a destra: totali
+  const right = [
+    `Righe: ${picks.length}`,
+    `Pezzi: ${totals.qta}`
+  ];
+  // sinistra
+  lines.forEach((t,i)=> doc.text(t, M, 90 + i*16));
+  // destra
+  const rightX = W - M - 160;
+  right.forEach((t,i)=> doc.text(t, rightX, 90 + i*16));
+
+  /* Tabella */
+  const startY = 140;
+  // header riga
+  doc.setFillColor(15,27,53); // #0f1b35
+  doc.setTextColor(255,255,255);
+  doc.setFont('helvetica','bold'); doc.setFontSize(11);
+  doc.rect(M, startY, W - 2*M, 26, 'F');
+  const cols = [
+    { key:'ora', title:'Ora', width: 90 },
+    { key:'codice', title:'Codice', width: W - 2*M - 90 - 70 }, // dinamico
+    { key:'qty', title:'Q.tà', width: 70 }
+  ];
+  let x = M + 8, y = startY + 18;
+  cols.forEach(c=>{ doc.text(c.title, x, y); x += c.width; });
+
+  // righe
+  doc.setFont('helvetica','normal'); doc.setFontSize(11);
+  let rowY = startY + 26;
+  const lineH = 22;
+  picks.forEach((p,idx)=>{
+    // zebra
+    if(idx % 2 === 0){
+      doc.setFillColor(245,247,251); // #F5F7FB
+      doc.rect(M, rowY, W - 2*M, lineH, 'F');
+    }
+    doc.setTextColor(15,23,42); // testo scuro
+    let cx = M + 8; const cy = rowY + 15;
+    const hh = p.ts.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    // Ora
+    doc.text(hh, cx, cy);
+    cx += cols[0].width;
+    // Codice (gestione overflow)
+    const codeMaxWidth = cols[1].width - 8;
+    const codeLines = doc.splitTextToSize(p.codice, codeMaxWidth);
+    doc.text(codeLines, cx, cy);
+    cx += cols[1].width;
+    // Q.tà
+    doc.text(String(p.qty), cx, cy);
+
+    rowY += lineH;
+    // nuova pagina se serve
+    if(rowY > doc.internal.pageSize.getHeight() - 90){
+      addFooter(doc, W);
+      doc.addPage();
+      rowY = 70; // nuova pagina margine top
+    }
   });
 
-  const filename=`scheda_picking_${cm}_${op}.pdf`;
-  doc.save(filename);
-};
+  /* Riepilogo finale */
+  rowY += 10;
+  if(rowY > doc.internal.pageSize.getHeight() - 90){
+    addFooter(doc, W);
+    doc.addPage();
+    rowY = 70;
+  }
+  doc.setDrawColor(39,52,73);
+  doc.line(M, rowY, W - M, rowY);
+  rowY += 16;
+  doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(15,23,42);
+  doc.text(`Totale righe: ${picks.length} • Totale pezzi: ${totals.qta}`, M, rowY);
+
+  addFooter(doc, W);
+  const nome = `scheda_picking_${(info.commessa||'commessa')}.pdf`;
+  doc.save(nome);
+
+  function addFooter(doc, W){
+    const pnum = doc.getNumberOfPages();
+    doc.setFont('helvetica','normal'); doc.setFontSize(9);
+    doc.setTextColor(150,160,175);
+    const footer = `Generato il ${now.toLocaleString()} • Pag. ${pnum}`;
+    doc.text(footer, W/2, doc.internal.pageSize.getHeight()-16, {align:'center'});
+  }
+}
+
+function getHeaderInfo(){
+  return {
+    operatore: sanitize($('operatoreInput').value,64),
+    commessa: sanitize($('commessaInput').value,64),
+    posizione: sanitize($('posizioneInput').value,64)
+  };
+}
+function getTotals(){
+  let qta = 0;
+  picks.forEach(p=> qta += Number(p.qty||0));
+  return { qta };
+}
 
 /* ===== Modale quantità ===== */
 const qtyModal=$('qtyModal'), qtyInput=$('qtyInput'), qtyMinus=$('qtyMinus'), qtyPlus=$('qtyPlus'), qtyOk=$('qtyOk'), qtyCancel=$('qtyCancel'), qtyInfo=$('qtyInfo');
 function openQtyModal(code){
   qtyInfo.innerHTML = `Codice: <b>${code}</b>`;
-  qtyInput.value=''; qtyOk.disabled=true;
-  qtyModal.style.display='flex'; setTimeout(()=>qtyInput.focus(),50);
+  qtyInput.value=''; // campo vuoto come richiesto
+  qtyModal.style.display='flex';
+  setTimeout(()=>qtyInput.focus(),50);
 }
 function closeQtyModal(){ qtyModal.style.display='none'; }
-qtyInput.addEventListener('input',()=>{ const v=parseInt(qtyInput.value,10); qtyOk.disabled = !(v>=1); });
-qtyMinus.onclick=()=>{ const n=Math.max(1,(parseInt(qtyInput.value||'0',10)||0)-1); qtyInput.value=String(n); qtyOk.disabled=false; };
-qtyPlus.onclick =()=>{ const n=Math.max(1,(parseInt(qtyInput.value||'0',10)||0)+1); qtyInput.value=String(n); qtyOk.disabled=false; };
+qtyMinus.onclick=()=>{ const cur=parseInt(qtyInput.value||'0',10); const v=Math.max(1, (isNaN(cur)?0:cur)-1); qtyInput.value=v||''; };
+qtyPlus.onclick =()=>{ const cur=parseInt(qtyInput.value||'0',10); const v=Math.max(1, (isNaN(cur)?0:cur)+1); qtyInput.value=v; };
 qtyCancel.onclick=()=>{ closeQtyModal(); };
 qtyOk.onclick=()=>{
-  const v=parseInt(qtyInput.value,10); if(!(v>=1)) return;
+  let qty=parseInt(qtyInput.value||'0',10);
+  if(isNaN(qty) || qty<1){ alert('Inserisci una quantità valida (>=1).'); qtyInput.focus(); return; }
   if(!pendingOK){ closeQtyModal(); return; }
-  const ts=new Date(); const cm=sanitize($('commessaInput').value,64), ps=sanitize($('posizioneInput').value,64);
-  picks.push({ts, codice:sanitize(pendingOK,128), qty:v, commessa:cm, posizione:ps});
-  renderRighe(); showToast((I18N[langSel.value]||I18N.it).toast_added,'ok',1400);
+  const ts=new Date();
+  const cm=sanitize($('commessaInput').value,64), ps=sanitize($('posizioneInput').value,64);
+  picks.push({ts, codice: sanitize(pendingOK,128), qty, commessa:cm, posizione:ps});
+  savePicksCache();
+  renderRighe(); showToast('Riga aggiunta','ok',1400);
   pendingOK=null; scanned=null; updateUI(); closeQtyModal();
 };
 
 /* ===== Reset ===== */
-$('reset').onclick=()=>{ expected=null; scanned=null; pendingOK=null; updateUI(); };
+$('reset').addEventListener('click', ()=>{ expected=null; scanned=null; pendingOK=null; updateUI(); });
 
-/* ===== Camera Fullscreen ===== */
+/* ===== Camera fullscreen (BarcodeDetector ⇒ ZXing) ===== */
 const camFS=$('camFS'), camClose=$('camClose'), video=$('video'), overlay=$('overlay'), guide=$('guide'), laser=$('laser');
-let stream=null, track=null, currentMode=null;
-camClose.onclick=stopCameraFS;
-$('scanList').onclick = ()=>startScanFS('list');
-$('scanItem').onclick = ()=>startScanFS('item');
+let stream=null, track=null, usingZX=false;
+let currentMode=null;
 
-function canAccept(){ const now=performance.now(); if(now-lastScanTs<600) return false; lastScanTs=now; return true; }
+camClose.addEventListener('click', stopCameraFS);
+
+$('scanList').addEventListener('click', ()=>startScanFS('list'));
+$('scanItem').addEventListener('click', ()=>startScanFS('item'));
+
+function canAccept(){
+  const now=performance.now();
+  if(now-lastScanTs<600) return false;
+  lastScanTs=now; return true;
+}
 
 async function startScanFS(which){
-  // fields required
-  const L=I18N[langSel.value]||I18N.it;
-  saveSessionFields();
-  const op=sanitize($('operatoreInput').value,64), cm=sanitize($('commessaInput').value,64), ps=sanitize($('posizioneInput').value,64);
-  if(!op || !cm || !ps){ alert(L.err_fields); activateTab('commessa'); return; }
-
+  // resta nella TAB Scanner
   activateTab('scanner');
-  currentMode=which; camFS.classList.add('active');
+  // salva operatore/commessa/posizione
+  saveSessionFields();
 
-  try{ await startDetectorHybrid(); }catch(e){ await startZXingHybrid(); }
+  const cm=sanitize($('commessaInput').value,64), ps=sanitize($('posizioneInput').value,64);
+  if(!cm || !ps){ alert('Inserisci Numero commessa e Posizione prima di scansionare.'); return; }
+
+  currentMode=which;
+  camFS.classList.add('active');
+  try{
+    await startDetectorHybrid(); usingZX=false;
+  }catch(e){
+    await startZXingHybrid(); usingZX=true;
+  }
 }
+
 function stopCameraFS(){
-  try{ if(video.srcObject){ video.srcObject.getTracks().forEach(t=>t.stop()); video.srcObject=null; } if(track) track.stop(); }catch(e){}
+  try{
+    if(video.srcObject){ video.srcObject.getTracks().forEach(t=>t.stop()); video.srcObject=null; }
+    if(track) track.stop();
+  }catch(e){}
   stream=null; track=null; camFS.classList.remove('active');
+  // restiamo nella tab Scanner (non cambiamo)
 }
 
 /* Detector nativo */
 async function startDetectorHybrid(){
   const constraints={video:{facingMode:"environment",width:{ideal:1280},height:{ideal:720},focusMode:"continuous"}};
   const chosen=$('cameraSelect').value; if(chosen) constraints.video.deviceId={exact:chosen};
-  stream=await navigator.mediaDevices.getUserMedia(constraints); track=stream.getVideoTracks()[0]; video.srcObject=stream; await video.play();
+
+  stream=await navigator.mediaDevices.getUserMedia(constraints);
+  track=stream.getVideoTracks()[0]; video.srcObject=stream; await video.play();
 
   const detector=new BarcodeDetector({formats:['qr_code','code_128','ean_13','ean_8','upc_a','code_39']});
   const ctx=overlay.getContext('2d');
+
   const loop=()=>{
     if(!stream){return;}
     if(video.readyState<2){ requestAnimationFrame(loop); return; }
@@ -521,18 +645,22 @@ async function startDetectorHybrid(){
       const g=guide.getBoundingClientRect(), v=video.getBoundingClientRect();
       const gx=g.left-v.left, gy=g.top-v.top, gw=g.width, gh=g.height;
       const sx=overlay.width/v.width, sy=overlay.height/v.height;
+
       let accepted=null;
       for(const c of codes){
         const r=c.boundingBox; const cx=r.x+r.width/2, cy=r.y+r.height/2;
         const domX=cx/sx, domY=cy/sy;
         const inGuide=(domX>=gx&&domX<=gx+gw&&domY>=gy&&domY<=gy+gh);
-        const g2=laser.getBoundingClientRect(); const lx=g2.left-v.left+g2.width/2, ly=g2.top-v.top+g2.height/2;
-        const dist=Math.sqrt((domX-lx)**2+(domY-ly)**2), radius=g2.width/2;
+        const g2=laser.getBoundingClientRect();
+        const lx=g2.left-v.left+g2.width/2, ly=g2.top-v.top+g2.height/2;
+        const dist=Math.sqrt((domX-lx)**2+(domY-ly)**2);
+        const radius=g2.width/2;
         if(inGuide && dist<radius){ accepted=c.rawValue; break; }
       }
+
       if(accepted && canAccept()){
         if(settings.confirm){
-          if(lastVal===accepted){ confirmBuf.push(accepted);} else {confirmBuf=[accepted]; lastVal=accepted;}
+          if(lastVal===accepted){ confirmBuf.push(accepted); } else { confirmBuf=[accepted]; lastVal=accepted; }
           if(confirmBuf.length>=2){ processScan(accepted); return; }
         } else { processScan(accepted); return; }
       }
@@ -546,40 +674,117 @@ async function startDetectorHybrid(){
 async function startZXingHybrid(){
   const constraints={video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}};
   const chosen=$('cameraSelect').value; if(chosen) constraints.video.deviceId={ exact: chosen };
-  stream=await navigator.mediaDevices.getUserMedia(constraints); track=stream.getVideoTracks()[0];
+
+  stream=await navigator.mediaDevices.getUserMedia(constraints);
+  track=stream.getVideoTracks()[0];
+
+  // Usa il <video> già presente a schermo intero
+  video.srcObject=stream; await video.play();
+
   const formats=[ZXing.BarcodeFormat.QR_CODE,ZXing.BarcodeFormat.CODE_128,ZXing.BarcodeFormat.EAN_13,ZXing.BarcodeFormat.UPC_A,ZXing.BarcodeFormat.CODE_39];
   const hints=new Map(); hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,formats);
   const reader=new ZXing.BrowserMultiFormatReader(hints);
-  video.srcObject=stream; await video.play();
-  const loop=async()=>{ try{ const res=await reader.decodeFromVideoDevice(null, video); if(res && canAccept()){ if(pointInGuideZXing(res,video)){ processScan(res.text); return; } } }catch(e){} requestAnimationFrame(loop); }; loop();
+
+  const loop=async()=>{
+    try{
+      const res=await reader.decodeFromVideoElement(video);
+      if(res && canAccept()){
+        if(pointInGuideZXing(res,video)){ processScan(res.text); return; }
+      }
+    }catch(e){}
+    requestAnimationFrame(loop);
+  };
+  loop();
 }
 function pointInGuideZXing(result,vidEl){
   try{
     const pts=result.resultPoints||[]; if(pts.length===0) return true;
     let cx=0,cy=0; for(const p of pts){ cx+=p.x; cy+=p.y; } cx/=pts.length; cy/=pts.length;
-    const vrect=vidEl.getBoundingClientRect(); const vw=vidEl.videoWidth, vh=vidEl.videoHeight;
-    const scale=Math.min(vrect.width/vw, vrect.height/vh); const dispW=vw*scale, dispH=vh*scale;
+
+    const vrect=vidEl.getBoundingClientRect();
+    const vw=vidEl.videoWidth, vh=vidEl.videoHeight;
+    const scale=Math.min(vrect.width/vw, vrect.height/vh);
+    const dispW=vw*scale, dispH=vh*scale;
     const offX=(vrect.width-dispW)/2, offY=(vrect.height-dispH)/2;
+
     const domX=offX+cx*scale, domY=offY+cy*scale;
-    const g2=laser.getBoundingClientRect(); const lx=g2.left-vrect.left+g2.width/2, ly=g2.top-vrect.top+g2.height/2;
-    const dist=Math.sqrt((domX-lx)**2+(domY-ly)**2); return (dist < g2.width/2);
+    const g2=laser.getBoundingClientRect();
+    const lx=g2.left-vrect.left+g2.width/2, ly=g2.top-vrect.top+g2.height/2;
+    const dist=Math.sqrt((domX-lx)**2+(domY-ly)**2);
+    return (dist < g2.width/2);
   }catch(e){ return true; }
 }
 
-/* Lettura singola */
+/* Gestione lettura singola */
 function processScan(text){
-  const val=sanitize(text,128);
-  if(currentMode==='list'){ expected=val; } else { scanned=val; }
-  stopCameraFS(); updateUI();
+  const val = sanitize(text,128);
+  if(currentMode==='list'){ expected=val; }
+  else{ scanned=val; }
+  // Chiudiamo la camera sempre (sia ok che err) e restiamo nella tab Scanner
+  stopCameraFS();
+  updateUI();
 }
 
-/* Camera select */
-async function populateCameras(){ try{ const devices=await navigator.mediaDevices.enumerateDevices(); const vids=devices.filter(d=>d.kind==='videoinput');
-  $('cameraSelect').innerHTML='<option value="">(automatica)</option>'+vids.map(v=>`<option value="${v.deviceId}">${v.label||'Fotocamera'}</option>`).join(''); }catch(_){} }
+/* ===== Camera select ===== */
+async function populateCameras(){
+  try{
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const vids = devices.filter(d=>d.kind==='videoinput');
+    $('cameraSelect').innerHTML = '<option value="">(automatica)</option>' +
+      vids.map(v=>`<option value="${v.deviceId}">${v.label||'Fotocamera'}</option>`).join('');
+  }catch(_){}
+}
 if(navigator.mediaDevices?.enumerateDevices){ populateCameras(); }
 
-/* Avvio */
-loadSettings(); loadSessionFields(); updateUI(); renderRighe();
+/* ===== Autosave righe + ripristino ===== */
+function savePicksCache(){
+  const data = picks.map(p=>({ts:p.ts.getTime(), codice:p.codice, qty:p.qty, commessa:p.commessa, posizione:p.posizione}));
+  localStorage.setItem(LSKEY_PICKS, JSON.stringify(data));
+  // aggiorna guardia beforeunload
+  toggleBeforeUnload();
+}
+function loadPicksCache(){
+  try{
+    const raw = localStorage.getItem(LSKEY_PICKS);
+    if(!raw) return;
+    const arr = JSON.parse(raw)||[];
+    if(arr.length){
+      picks = arr.map(x=>({ts:new Date(x.ts), codice:x.codice, qty:x.qty, commessa:x.commessa, posizione:x.posizione}));
+      renderRighe();
+      showToast(`Sessione ripristinata (${picks.length} righe)`, 'ok', 1800);
+    }
+  }catch{}
+}
+function clearPicksCache(){ localStorage.removeItem(LSKEY_PICKS); toggleBeforeUnload(); }
+
+/* ===== Guardia anti-refresh/chiusura ===== */
+function toggleBeforeUnload(){
+  if(picks.length>0){
+    window.onbeforeunload = (e)=>{ e.preventDefault(); e.returnValue=''; };
+  }else{
+    window.onbeforeunload = null;
+  }
+}
+
+/* ===== Avvio ===== */
+loadSettings();
+loadSessionFields();
+loadPicksCache();
+updateUI();
+renderRighe();
+
+/* Abilita pulsanti strutturali */
+$('scaricaCSV').disabled = picks.length===0;
+$('scaricaPDF').disabled = picks.length===0;
+
+/* Persiste dopo ogni modifica di righe */
+const origRenderRighe = renderRighe;
+renderRighe = function(){ // wrap per assicurare stato pulsanti e salvataggio (già fatto altrove, ma sicuro)
+  origRenderRighe();
+  savePicksCache();
+};
+
+/* Sostituisco le chiamate dove serve: già chiamiamo renderRighe() dopo push e svuota che richiama savePicksCache() */
 </script>
 </body>
 </html>
