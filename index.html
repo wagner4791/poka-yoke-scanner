@@ -8,14 +8,14 @@
 <!-- ZXing fallback -->
 <script src="https://unpkg.com/@zxing/library@latest"></script>
 <script src="https://unpkg.com/@zxing/browser@latest"></script>
-
-<!-- jsPDF per esportazione PDF -->
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<!-- jsPDF per PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
   :root{
     --bg:#0F172A;        /* sfondo app (blu notte) */
     --panel:#16223A;     /* pannelli */
+    --panel-2:#0b162c;   /* pannelli scuri */
     --border:#273449;    /* bordi */
     --text:#E6EDF7;      /* testo primario */
     --muted:#9FB1CB;     /* testo secondario */
@@ -29,14 +29,20 @@
   html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:system-ui,Inter,Segoe UI,Roboto,Arial}
   .app{min-height:100%;display:flex;flex-direction:column}
 
-  /* Header + tabs */
+  /* Header + topbar */
   header{padding:12px 16px;border-bottom:1px solid var(--border);background:#0B1325}
   .topbar{display:flex;align-items:center;gap:10px;justify-content:space-between}
   .brand{font-weight:800}
+  .rightTop{display:flex;gap:10px;align-items:center}
+  #langSelect,#langSelect2{
+    background:#0d182f;border:1px solid var(--border);border-radius:8px;color:var(--text);
+    padding:8px 10px;font-size:14px
+  }
   #netBadge{font-size:12px;padding:4px 8px;border-radius:8px;border:1px solid var(--border)}
   #netBadge.online{background:rgba(34,197,94,.12);color:#86efac;border-color:#14532d}
   #netBadge.offline{background:rgba(245,158,11,.12);color:#FCD34D;border-color:#B45309}
 
+  /* Tabs */
   .tabs{display:flex;gap:8px;padding:10px 12px;border-bottom:1px solid var(--border);background:#0E1A32}
   .tab{padding:10px 14px;border-radius:999px;border:1px solid var(--border);color:var(--muted);cursor:pointer;font-weight:700}
   .tab.active{background:var(--accent);border-color:var(--accent);color:#05263A}
@@ -65,7 +71,7 @@
   .badge.err{background:rgba(239,68,68,.15);color:#fecaca;border-color:#7f1d1d}
 
   #codes{display:flex;flex-direction:column;gap:10px;align-items:stretch;margin-top:4px;width:100%;max-width:680px}
-  .codeBox{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:#0b162c}
+  .codeBox{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:var(--panel-2)}
   .codeLabel{font-size:13px;color:var(--muted);font-weight:800}
   .codeValue{flex:1;text-align:right;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-weight:900;letter-spacing:.5px;font-size:clamp(22px,3.6vh,40px);color:var(--text);word-break:break-all}
   .codeBox.ok{border-color:#14532d;background:rgba(34,197,94,.10)}
@@ -93,7 +99,7 @@
 
   /* Modale quantità */
   #qtyModal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:10000}
-  .modalCard{background:#0b162c;border:1px solid var(--border);border-radius:14px;padding:16px;min-width:280px;max-width:92vw;box-shadow:0 10px 30px rgba(0,0,0,.6)}
+  .modalCard{background:var(--panel-2);border:1px solid var(--border);border-radius:14px;padding:16px;min-width:280px;max-width:92vw;box-shadow:0 10px 30px rgba(0,0,0,.6)}
   .modalTitle{font-weight:800;margin-bottom:8px}
   .qtyRow{display:flex;gap:10px;align-items:center;justify-content:center;margin:12px 0}
   .qtyBtn{padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:#0f203c;color:var(--text);font-weight:800;font-size:20px;cursor:pointer}
@@ -105,7 +111,6 @@
   #toast.ok{background:rgba(34,197,94,.15);border-color:#14532d;color:#86efac}
   #toast.err{background:rgba(239,68,68,.15);border-color:#7f1d1d;color:#fecaca}
 
-  /* Small text */
   .muted{color:var(--muted)}
 </style>
 </head>
@@ -114,17 +119,25 @@
 <div class="app">
   <header>
     <div class="topbar">
-      <div class="brand">Poka-Yoke PRO • Scanner IBRIDO</div>
-      <span id="netBadge" class="offline">Offline</span>
+      <div class="brand" data-i18n="brand">Poka-Yoke PRO • Scanner IBRIDO</div>
+      <div class="rightTop">
+        <select id="langSelect" aria-label="Language">
+          <option value="it">Italiano</option>
+          <option value="pt-BR">Português (BR)</option>
+          <option value="en">English</option>
+          <option value="ur">اردو</option>
+        </select>
+        <span id="netBadge" class="offline">Offline</span>
+      </div>
     </div>
   </header>
 
   <!-- Tabs -->
   <div class="tabs">
-    <button class="tab active" data-tab="commessa">Commessa</button>
-    <button class="tab" data-tab="scanner">Scanner</button>
-    <button class="tab" data-tab="righe">Righe raccolte</button>
-    <button class="tab" data-tab="impostazioni">Impostazioni</button>
+    <button class="tab active" data-tab="commessa" data-i18n="tabs.job">Commessa</button>
+    <button class="tab" data-tab="scanner" data-i18n="tabs.scanner">Scanner</button>
+    <button class="tab" data-tab="righe" data-i18n="tabs.rows">Righe raccolte</button>
+    <button class="tab" data-tab="impostazioni" data-i18n="tabs.settings">Impostazioni</button>
   </div>
 
   <main>
@@ -133,45 +146,45 @@
       <div class="panel">
         <div class="row">
           <label class="field">
-            <span>Operatore</span>
-            <input id="operatoreInput" class="input" placeholder="Es. Junior" autocomplete="off"/>
+            <span data-i18n="fields.job">Numero commessa</span>
+            <input id="commessaInput" class="input" placeholder="024830" autocomplete="off"/>
           </label>
           <label class="field">
-            <span>Numero commessa</span>
-            <input id="commessaInput" class="input" placeholder="Es. 024830" autocomplete="off"/>
+            <span data-i18n="fields.pos">Posizione</span>
+            <input id="posizioneInput" class="input" placeholder="POS 0020" autocomplete="off"/>
           </label>
           <label class="field">
-            <span>Posizione</span>
-            <input id="posizioneInput" class="input" placeholder="Es. POS 0020" autocomplete="off"/>
+            <span data-i18n="fields.op">Operatore</span>
+            <input id="operatoreInput" class="input" placeholder="Cognome / ID" autocomplete="off"/>
           </label>
           <label class="field" style="min-width:200px;flex:1 1 260px">
-            <span>Fotocamera</span>
+            <span data-i18n="fields.camera">Fotocamera</span>
             <select id="cameraSelect" class="input">
               <option value="">(automatica)</option>
             </select>
           </label>
         </div>
         <div class="row" style="margin-top:10px">
-          <button id="goScanner" class="btn btn-primary">Vai allo Scanner</button>
+          <button id="goScanner" class="btn btn-primary" data-i18n="actions.goScanner">Vai allo Scanner</button>
         </div>
       </div>
-      <div class="panel muted">Suggerimento: Operatore, Commessa e Posizione restano salvati sul dispositivo.</div>
+      <div class="panel muted" data-i18n="hints.persist">Commessa/Posizione/Operatore restano salvati sul dispositivo.</div>
     </section>
 
     <!-- SCANNER -->
     <section id="scanner" class="view">
       <div class="panel status">
         <div id="badge" class="badge">Pronto</div>
-        <div id="resultText">Scansiona prima la <b>LISTA</b>, poi il <b>PEZZO</b></div>
+        <div id="resultText" data-i18n="status.hint">Scansiona prima la <b>LISTA</b>, poi il <b>PEZZO</b></div>
         <div id="codes"></div>
-        <div class="muted">Allinea il codice nel <b>quadrato</b> e centra nel cerchio rosso 🔴.</div>
+        <div class="muted" data-i18n="status.tip">Allinea il codice nel <b>quadrato</b> e centra nel cerchio rosso 🔴.</div>
       </div>
 
       <div class="panel">
         <div class="row">
-          <button id="scanList" class="btn btn-primary">📋 LISTA (fullscreen)</button>
-          <button id="scanItem" class="btn btn-primary">📦 PEZZO (fullscreen)</button>
-          <button id="reset" class="btn btn-outline">🔄 Reset</button>
+          <button id="scanList" class="btn btn-primary" data-i18n="actions.scanList">📋 LISTA (fullscreen)</button>
+          <button id="scanItem" class="btn btn-primary" data-i18n="actions.scanItem">📦 PEZZO (fullscreen)</button>
+          <button id="reset" class="btn btn-outline" data-i18n="actions.reset">🔄 Reset</button>
         </div>
       </div>
     </section>
@@ -180,51 +193,72 @@
     <section id="righe" class="view">
       <div class="panel">
         <div class="row" style="justify-content:space-between">
-          <div style="font-weight:800">Righe raccolte <span class="countPill" id="countPill">0</span></div>
+          <div style="font-weight:800">
+            <span data-i18n="rows.title">Righe raccolte</span>
+            <span class="countPill" id="countPill">0</span>
+          </div>
           <div class="row" style="gap:8px">
-            <button id="scaricaPDF" class="btn btn-outline" disabled>🧾 Scarica PDF</button>
-            <button id="scaricaCSV" class="btn btn-outline" disabled>⬇️ Scarica CSV</button>
-            <button id="svuota" class="btn btn-outline" disabled>🗑️ Svuota</button>
+            <button id="scaricaCSV" class="btn btn-outline" disabled data-i18n="actions.csv">⬇️ Scarica CSV</button>
+            <button id="scaricaPDF" class="btn btn-outline" disabled data-i18n="actions.pdf">⬇️ Scarica PDF</button>
+            <button id="saveSession" class="btn btn-outline" data-i18n="actions.save">💾 Salva sessione</button>
+            <button id="loadSession" class="btn btn-outline" data-i18n="actions.load">📂 Carica sessione</button>
+            <button id="svuota" class="btn btn-outline" disabled data-i18n="actions.clear">🗑️ Svuota</button>
           </div>
         </div>
         <div id="righeBox" style="margin-top:10px">
           <table>
-            <thead><tr><th>Ora</th><th>Codice</th><th>Q.tà</th><th>Commessa</th><th>Posizione</th></tr></thead>
+            <thead><tr>
+              <th data-i18n="table.time">Ora</th>
+              <th data-i18n="table.code">Codice</th>
+              <th data-i18n="table.qty">Q.tà</th>
+              <th data-i18n="table.job">Commessa</th>
+              <th data-i18n="table.pos">Posizione</th>
+            </tr></thead>
             <tbody id="righeBody"></tbody>
           </table>
         </div>
       </div>
+      <div class="panel muted" data-i18n="hints.offline">Dati locali. Usa “Salva sessione” per conservarli e “Carica sessione” per ripristinare.</div>
     </section>
 
     <!-- IMPOSTAZIONI -->
     <section id="impostazioni" class="view">
       <div class="panel">
-        <div style="font-weight:800;margin-bottom:8px">Impostazioni</div>
+        <div style="font-weight:800;margin-bottom:8px" data-i18n="settings.title">Impostazioni</div>
         <div class="row">
           <label class="field" style="flex:0 0 260px">
-            <span>Conferma doppia</span>
+            <span data-i18n="settings.confirm">Conferma doppia</span>
             <select id="optConfirm" class="input">
-              <option value="on" selected>Attiva (più sicuro)</option>
-              <option value="off">Disattiva (più veloce)</option>
+              <option value="on" selected data-i18n="settings.confirmOn">Attiva (più sicuro)</option>
+              <option value="off" data-i18n="settings.confirmOff">Disattiva (più veloce)</option>
             </select>
           </label>
           <label class="field" style="flex:0 0 260px">
-            <span>Annuncio vocale</span>
+            <span data-i18n="settings.voice">Annuncio vocale</span>
             <select id="optVoice" class="input">
-              <option value="on" selected>Attivo</option>
-              <option value="off">Disattivo</option>
+              <option value="on" selected data-i18n="common.on">Attivo</option>
+              <option value="off" data-i18n="common.off">Disattivo</option>
             </select>
           </label>
           <label class="field" style="flex:0 0 260px">
-            <span>Vibrazione</span>
+            <span data-i18n="settings.vibrate">Vibrazione</span>
             <select id="optVibrate" class="input">
-              <option value="on" selected>Attiva</option>
-              <option value="off">Disattiva</option>
+              <option value="on" selected data-i18n="common.on">Attiva</option>
+              <option value="off" data-i18n="common.off">Disattiva</option>
+            </select>
+          </label>
+          <label class="field" style="flex:0 0 260px">
+            <span data-i18n="settings.lang">Lingua</span>
+            <select id="langSelect2" class="input">
+              <option value="it">Italiano</option>
+              <option value="pt-BR">Português (BR)</option>
+              <option value="en">English</option>
+              <option value="ur">اردو</option>
             </select>
           </label>
         </div>
       </div>
-      <div class="panel muted">Versione UI: 1.0 • Solo locale (nessun invio in rete). Aggiungi alla Home per esperienza tipo app.</div>
+      <div class="panel muted">UI v1.1 • Solo locale • Aggiungi alla Home per esperienza tipo app.</div>
     </section>
   </main>
 </div>
@@ -232,8 +266,8 @@
 <!-- Fullscreen Camera -->
 <div id="camFS">
   <div class="camTop">
-    <button id="camClose" class="camBtn">✕ Chiudi</button>
-    <div id="camHint" class="camBtn" style="pointer-events:none">Inquadra e centra nel cerchio</div>
+    <button id="camClose" class="camBtn" data-i18n="actions.close">✕ Chiudi</button>
+    <div id="camHint" class="camBtn" style="pointer-events:none" data-i18n="status.tip">Inquadra e centra nel cerchio</div>
   </div>
   <div class="camWrap">
     <video id="video" muted playsinline></video>
@@ -246,16 +280,16 @@
 <!-- Modale quantità -->
 <div id="qtyModal">
   <div class="modalCard">
-    <div class="modalTitle">Inserisci quantità prelevata</div>
+    <div class="modalTitle" data-i18n="modal.title">Inserisci quantità prelevata</div>
     <div id="qtyInfo" class="muted" style="margin-bottom:6px"></div>
     <div class="qtyRow">
       <button id="qtyMinus" class="qtyBtn">−</button>
-      <input id="qtyInput" class="qtyInput" type="number" min="1" step="1" value="" />
+      <input id="qtyInput" class="qtyInput" type="number" min="1" step="1" placeholder=""/>
       <button id="qtyPlus" class="qtyBtn">+</button>
     </div>
     <div class="modalActions">
-      <button id="qtyCancel" class="btn btn-outline">Annulla</button>
-      <button id="qtyOk" class="btn btn-ok">Conferma</button>
+      <button id="qtyCancel" class="btn btn-outline" data-i18n="actions.cancel">Annulla</button>
+      <button id="qtyOk" class="btn btn-ok" data-i18n="actions.confirm">Conferma</button>
     </div>
   </div>
 </div>
@@ -264,35 +298,197 @@
 <div id="toast"></div>
 
 <script>
+/* ===== i18n (PT-BR / IT / EN / UR) ===== */
+const i18n = {
+  "it": {
+    brand:"Poka-Yoke PRO • Scanner IBRIDO",
+    tabs:{job:"Commessa", scanner:"Scanner", rows:"Righe raccolte", settings:"Impostazioni"},
+    fields:{job:"Numero commessa", pos:"Posizione", op:"Operatore", camera:"Fotocamera"},
+    actions:{
+      goScanner:"Vai allo Scanner", scanList:"📋 LISTA (fullscreen)", scanItem:"📦 PEZZO (fullscreen)",
+      reset:"🔄 Reset", csv:"⬇️ Scarica CSV", pdf:"⬇️ Scarica PDF",
+      save:"💾 Salva sessione", load:"📂 Carica sessione", clear:"🗑️ Svuota",
+      close:"✕ Chiudi", cancel:"Annulla", confirm:"Conferma"
+    },
+    rows:{title:"Righe raccolte"},
+    table:{time:"Ora", code:"Codice", qty:"Q.tà", job:"Commessa", pos:"Posizione"},
+    status:{ready:"Pronto", hint:"Scansiona prima la <b>LISTA</b>, poi il <b>PEZZO</b>", tip:"Allinea il codice nel <b>quadrato</b> e centra nel cerchio rosso 🔴"},
+    settings:{
+      title:"Impostazioni", confirm:"Conferma doppia", confirmOn:"Attiva (più sicuro)", confirmOff:"Disattiva (più veloce)",
+      voice:"Annuncio vocale", vibrate:"Vibrazione", lang:"Lingua"
+    },
+    hints:{persist:"Commessa/Posizione/Operatore restano salvati sul dispositivo.",
+           offline:"Dati locali. Usa “Salva sessione” per conservarli e “Carica sessione” per ripristinare."},
+    common:{on:"Attivo", off:"Disattivo"},
+    toast:{rowAdded:"Riga aggiunta", saved:"Sessione salvata", loaded:"Sessione caricata", cleared:"Sessione svuotata"},
+    msg:{needFields:"Inserisci Numero commessa e Posizione prima di scansionare.", qtyRequired:"Inserisci una quantità valida (>0).", online:"Online", offline:"Offline",
+         matchOk:"Codice corretto", matchErr:"Errore, codice diverso"},
+    pdf:{
+      title:"Scheda Picking",
+      meta:{op:"Operatore", job:"Commessa", pos:"Posizione", date:"Data"},
+      th:{time:"Ora", code:"Codice", qty:"Q.tà"},
+      summary:{rows:"Righe totali", pieces:"Pezzi totali"},
+      generated:"Generato"
+    }
+  },
+  "pt-BR": {
+    brand:"Poka-Yoke PRO • Scanner HÍBRIDO",
+    tabs:{job:"Ordem", scanner:"Scanner", rows:"Linhas coletadas", settings:"Configurações"},
+    fields:{job:"Número da ordem", pos:"Posição", op:"Operador(a)", camera:"Câmera"},
+    actions:{
+      goScanner:"Ir para o Scanner", scanList:"📋 LISTA (tela cheia)", scanItem:"📦 PEÇA (tela cheia)",
+      reset:"🔄 Resetar", csv:"⬇️ Baixar CSV", pdf:"⬇️ Baixar PDF",
+      save:"💾 Salvar sessão", load:"📂 Carregar sessão", clear:"🗑️ Limpar",
+      close:"✕ Fechar", cancel:"Cancelar", confirm:"Confirmar"
+    },
+    rows:{title:"Linhas coletadas"},
+    table:{time:"Hora", code:"Código", qty:"Qtd.", job:"Ordem", pos:"Posição"},
+    status:{ready:"Pronto", hint:"Escaneie primeiro a <b>LISTA</b>, depois a <b>PEÇA</b>", tip:"Alinhe o código no <b>quadrado</b> e centre no círculo vermelho 🔴"},
+    settings:{
+      title:"Configurações", confirm:"Confirmação dupla", confirmOn:"Ativar (mais seguro)", confirmOff:"Desativar (mais rápido)",
+      voice:"Anúncio de voz", vibrate:"Vibração", lang:"Idioma"
+    },
+    hints:{persist:"Ordem/Posição/Operador ficam salvos no dispositivo.",
+           offline:"Dados locais. Use “Salvar sessão” para preservar e “Carregar sessão” para restaurar."},
+    common:{on:"Ativo", off:"Desativado"},
+    toast:{rowAdded:"Linha adicionada", saved:"Sessão salva", loaded:"Sessão carregada", cleared:"Sessão limpa"},
+    msg:{needFields:"Informe Número da ordem e Posição antes de escanear.", qtyRequired:"Informe uma quantidade válida (>0).", online:"Online", offline:"Offline",
+         matchOk:"Código correto", matchErr:"Erro, código diferente"},
+    pdf:{
+      title:"Ficha de Picking",
+      meta:{op:"Operador(a)", job:"Ordem", pos:"Posição", date:"Data"},
+      th:{time:"Hora", code:"Código", qty:"Qtd."},
+      summary:{rows:"Total de linhas", pieces:"Total de peças"},
+      generated:"Gerado"
+    }
+  },
+  "en": {
+    brand:"Poka-Yoke PRO • Hybrid Scanner",
+    tabs:{job:"Job", scanner:"Scanner", rows:"Collected rows", settings:"Settings"},
+    fields:{job:"Job number", pos:"Position", op:"Operator", camera:"Camera"},
+    actions:{
+      goScanner:"Go to Scanner", scanList:"📋 LIST (fullscreen)", scanItem:"📦 ITEM (fullscreen)",
+      reset:"🔄 Reset", csv:"⬇️ Download CSV", pdf:"⬇️ Download PDF",
+      save:"💾 Save session", load:"📂 Load session", clear:"🗑️ Clear",
+      close:"✕ Close", cancel:"Cancel", confirm:"Confirm"
+    },
+    rows:{title:"Collected rows"},
+    table:{time:"Time", code:"Code", qty:"Qty", job:"Job", pos:"Position"},
+    status:{ready:"Ready", hint:"Scan the <b>LIST</b> first, then the <b>ITEM</b>", tip:"Align the code in the <b>square</b> and center in the red circle 🔴"},
+    settings:{
+      title:"Settings", confirm:"Double confirmation", confirmOn:"On (safer)", confirmOff:"Off (faster)",
+      voice:"Voice prompt", vibrate:"Vibration", lang:"Language"
+    },
+    hints:{persist:"Job/Position/Operator are saved on device.",
+           offline:"Local data only. Use “Save session” to preserve and “Load session” to restore."},
+    common:{on:"On", off:"Off"},
+    toast:{rowAdded:"Row added", saved:"Session saved", loaded:"Session loaded", cleared:"Session cleared"},
+    msg:{needFields:"Enter Job number and Position before scanning.", qtyRequired:"Enter a valid quantity (>0).", online:"Online", offline:"Offline",
+         matchOk:"Correct code", matchErr:"Error, different code"},
+    pdf:{
+      title:"Picking Sheet",
+      meta:{op:"Operator", job:"Job", pos:"Position", date:"Date"},
+      th:{time:"Time", code:"Code", qty:"Qty"},
+      summary:{rows:"Total rows", pieces:"Total pieces"},
+      generated:"Generated"
+    }
+  },
+  "ur": {
+    brand:"پوکا یوکے پرو • ہائبرڈ اسکینر",
+    tabs:{job:"آرڈر", scanner:"اسکینر", rows:"اکٹھی لائنیں", settings:"ترتیبات"},
+    fields:{job:"آرڈر نمبر", pos:"پوزیشن", op:"آپریٹر", camera:"کیمرہ"},
+    actions:{
+      goScanner:"اسکینر پر جائیں", scanList:"📋 لسٹ (فل اسکرین)", scanItem:"📦 آئٹم (فل اسکرین)",
+      reset:"🔄 ری سیٹ", csv:"⬇️ سی ایس وی ڈاؤن لوڈ", pdf:"⬇️ پی ڈی ایف ڈاؤن لوڈ",
+      save:"💾 سیشن محفوظ کریں", load:"📂 سیشن لوڈ کریں", clear:"🗑️ صاف کریں",
+      close:"✕ بند کریں", cancel:"منسوخ", confirm:"تصدیق"
+    },
+    rows:{title:"اکٹھی لائنیں"},
+    table:{time:"وقت", code:"کوڈ", qty:"تعداد", job:"آرڈر", pos:"پوزیشن"},
+    status:{ready:"تیار", hint:"پہلے <b>لسٹ</b> اسکین کریں، پھر <b>آئٹم</b>", tip:"کوڈ کو <b>خانے</b> میں سیدھ میں کریں اور سرخ دائرے میں مرکز کریں 🔴"},
+    settings:{
+      title:"ترتیبات", confirm:"ڈبل تصدیق", confirmOn:"آن (زیادہ محفوظ)", confirmOff:"آف (تیز)",
+      voice:"وائس پرامپٹ", vibrate:"وائبریشن", lang:"زبان"
+    },
+    hints:{persist:"آرڈر/پوزیشن/آپریٹر ڈیوائس پر محفوظ رہتے ہیں۔",
+           offline:"مقامی ڈیٹا۔ محفوظ کرنے کیلئے “سیشن محفوظ کریں” اور بحال کرنے کیلئے “سیشن لوڈ کریں” استعمال کریں۔"},
+    common:{on:"آن", off:"آف"},
+    toast:{rowAdded:"قطار شامل ہو گئی", saved:"سیشن محفوظ ہو گیا", loaded:"سیشن لوڈ ہو گیا", cleared:"سیشن صاف ہو گیا"},
+    msg:{needFields:"اسکین کرنے سے پہلے آرڈر نمبر اور پوزیشن درج کریں۔", qtyRequired:"درست مقدار درج کریں (>0)۔", online:"آن لائن", offline:"آف لائن",
+         matchOk:"درست کوڈ", matchErr:"غلطی، مختلف کوڈ"},
+    pdf:{
+      title:"پکنگ شیٹ",
+      meta:{op:"آپریٹر", job:"آرڈر", pos:"پوزیشن", date:"تاریخ"},
+      th:{time:"وقت", code:"کوڈ", qty:"تعداد"},
+      summary:{rows:"کل لائنیں", pieces:"کل پیسز"},
+      generated:"تیار کردہ"
+    }
+  }
+};
+
 /* ===== Stato rete (solo badge) ===== */
 const netBadge = document.getElementById('netBadge');
 function setNetBadge(){
-  const on = navigator.onLine;
-  netBadge.textContent = on ? 'Online' : 'Offline';
-  netBadge.className = on ? 'online' : 'offline';
+  const lang = getLang();
+  const txt = navigator.onLine ? i18n[lang].msg.online : i18n[lang].msg.offline;
+  netBadge.textContent = txt;
+  netBadge.className = navigator.onLine ? 'online' : 'offline';
 }
 window.addEventListener('online', setNetBadge);
 window.addEventListener('offline', setNetBadge);
-setNetBadge();
 
 /* ===== Helper generali ===== */
 const $ = id => document.getElementById(id);
 const tabs = Array.from(document.querySelectorAll('.tab'));
-const views = {
-  commessa: $('commessa'),
-  scanner: $('scanner'),
-  righe: $('righe'),
-  impostazioni: $('impostazioni')
-};
-function activateTab(name){
-  tabs.forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
-  Object.entries(views).forEach(([k,el])=> el.classList.toggle('active', k===name));
-}
+const views = { commessa:$('commessa'), scanner:$('scanner'), righe:$('righe'), impostazioni:$('impostazioni') };
+function activateTab(name){ tabs.forEach(t=>t.classList.toggle('active', t.dataset.tab===name)); Object.entries(views).forEach(([k,el])=> el.classList.toggle('active', k===name)); }
 tabs.forEach(t=> t.addEventListener('click', ()=> activateTab(t.dataset.tab)));
 $('goScanner').addEventListener('click', ()=> activateTab('scanner'));
 
+/* ===== Lingua ===== */
+const LSKEY_LANG = 'poka_lang_v1';
+function getLang(){
+  return localStorage.getItem(LSKEY_LANG) || 'it';
+}
+function setLang(l){
+  localStorage.setItem(LSKEY_LANG, l);
+}
+function t(path){
+  const parts = path.split('.');
+  let cur = i18n[getLang()];
+  for(const p of parts){ if(!cur) break; cur = cur[p]; }
+  return cur || path;
+}
+function applyI18n(){
+  // elementi con data-i18n
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const key = el.getAttribute('data-i18n');
+    const val = t(key);
+    if(el.tagName==='INPUT' || el.tagName==='TEXTAREA'){ el.placeholder = val; }
+    else el.innerHTML = val;
+  });
+  // topbar brand
+  document.querySelector('.brand').textContent = t('brand');
+  // net badge
+  setNetBadge();
+}
+const langSelect = $('langSelect');
+const langSelect2 = $('langSelect2');
+function initLang(){
+  let lang = getLang();
+  if(!lang){ // primissimo avvio
+    const nav = (navigator.language || 'it').toLowerCase();
+    if(nav.startsWith('pt')) lang='pt-BR'; else if(nav.startsWith('en')) lang='en'; else if(nav.startsWith('ur')) lang='ur'; else lang='it';
+    setLang(lang);
+  }
+  langSelect.value = lang; langSelect2.value = lang;
+  applyI18n();
+}
+langSelect.addEventListener('change', e=>{ setLang(e.target.value); langSelect2.value=e.target.value; applyI18n(); });
+langSelect2.addEventListener('change', e=>{ setLang(e.target.value); langSelect.value=e.target.value; applyI18n(); });
+
 /* ===== Stato app ===== */
-let expected=null, scanned=null, mode=null;
+let expected=null, scanned=null, currentMode=null;
 let picks=[]; // {ts, codice, qty, commessa, posizione}
 let pendingOK=null;
 let confirmBuf=[], lastVal=null;
@@ -300,86 +496,81 @@ let lastScanTs=0;
 
 /* ===== Impostazioni (localStorage) ===== */
 const LSKEY_SETTINGS='poka_settings_v1';
-const LSKEY_SESSION='poka_session_v1';
-const LSKEY_PICKS='poka_picks_v1';
+const LSKEY_SESSION_FIELDS='poka_session_fields_v1';
+const LSKEY_SNAPSHOT='poka_snapshot_v1';
 const settings = { confirm:true, voice:true, vibrate:true };
 
 function loadSettings(){
-  try{
-    const s = JSON.parse(localStorage.getItem(LSKEY_SETTINGS)||'{}');
-    Object.assign(settings, s);
-  }catch{}
+  try{ Object.assign(settings, JSON.parse(localStorage.getItem(LSKEY_SETTINGS)||'{}')); }catch{}
   $('optConfirm').value = settings.confirm ? 'on':'off';
   $('optVoice').value = settings.voice ? 'on':'off';
   $('optVibrate').value = settings.vibrate ? 'on':'off';
 }
-function saveSettings(){
-  localStorage.setItem(LSKEY_SETTINGS, JSON.stringify(settings));
-}
-$('optConfirm').addEventListener('change', e=>{ settings.confirm = (e.target.value==='on'); saveSettings(); });
-$('optVoice').addEventListener('change', e=>{ settings.voice = (e.target.value==='on'); saveSettings(); });
-$('optVibrate').addEventListener('change', e=>{ settings.vibrate = (e.target.value==='on'); saveSettings(); });
+function saveSettings(){ localStorage.setItem(LSKEY_SETTINGS, JSON.stringify(settings)); }
+$('optConfirm').addEventListener('change', e=>{ settings.confirm=(e.target.value==='on'); saveSettings(); });
+$('optVoice').addEventListener('change', e=>{ settings.voice=(e.target.value==='on'); saveSettings(); });
+$('optVibrate').addEventListener('change', e=>{ settings.vibrate=(e.target.value==='on'); saveSettings(); });
 
-/* ===== Commessa/posizione/operatore (persist) ===== */
+/* ===== Commessa / posizione / operatore (persist) ===== */
 function sanitize(s,max=64){return String(s||'').replace(/[^\w\-\. \/]/g,'').slice(0,max)}
 function loadSessionFields(){
   try{
-    const s = JSON.parse(localStorage.getItem(LSKEY_SESSION)||'{}');
-    $('operatoreInput').value = s.operatore||'';
+    const s = JSON.parse(localStorage.getItem(LSKEY_SESSION_FIELDS)||'{}');
     $('commessaInput').value = s.commessa||'';
     $('posizioneInput').value = s.posizione||'';
+    $('operatoreInput').value = s.operatore||'';
   }catch{}
 }
 function saveSessionFields(){
   const data = {
-    operatore: sanitize($('operatoreInput').value,64),
     commessa: sanitize($('commessaInput').value,64),
-    posizione: sanitize($('posizioneInput').value,64)
+    posizione: sanitize($('posizioneInput').value,64),
+    operatore: sanitize($('operatoreInput').value,64)
   };
-  localStorage.setItem(LSKEY_SESSION, JSON.stringify(data));
+  localStorage.setItem(LSKEY_SESSION_FIELDS, JSON.stringify(data));
 }
-['operatoreInput','commessaInput','posizioneInput'].forEach(id=>{
-  $(id).addEventListener('change', saveSessionFields);
-});
+['commessaInput','posizioneInput','operatoreInput'].forEach(id=> $(id).addEventListener('change', saveSessionFields));
 
 /* ===== Audio/voce/vibrazione ===== */
 let actx;
 function tone(f=880,d=120,t='sine',v=.25){try{if(!actx)actx=new (window.AudioContext||window.webkitAudioContext)();const o=actx.createOscillator(),g=actx.createGain();o.type=t;o.frequency.value=f;g.gain.value=v;o.connect(g);g.connect(actx.destination);o.start();setTimeout(()=>o.stop(),d);}catch(e){}}
-function okSound(){tone(900,120);setTimeout(()=>tone(1200,140),130)}
-function errSound(){tone(250,220,'square',.22);setTimeout(()=>tone(180,230,'square',.20),200)}
-function speak(msg){ if(!settings.voice) return; try{ const u=new SpeechSynthesisUtterance(msg); u.lang='it-IT'; speechSynthesis.cancel(); speechSynthesis.speak(u);}catch(e){} }
+function okSound(){tone(900,100);setTimeout(()=>tone(1200,110),120)}
+function errSound(){tone(250,120,'square',.22);setTimeout(()=>tone(180,140,'square',.20),150)}
+function speak(msg){ if(!settings.voice) return; try{ const u=new SpeechSynthesisUtterance(msg); u.lang=langMap[getLang()]||'it-IT'; speechSynthesis.cancel(); speechSynthesis.speak(u);}catch(e){} }
 function vibrate(p){ if(settings.vibrate && navigator.vibrate) navigator.vibrate(p) }
+const langMap={ 'it':'it-IT', 'pt-BR':'pt-BR', 'en':'en-US', 'ur':'ur-PK' };
 
 /* ===== UI scanner ===== */
 const codesEl = $('codes'), badge=$('badge'), resultText=$('resultText');
 function norm(s){return s?String(s).trim().toUpperCase():s}
-function box(label,val,cls){
+function codeBox(label,val,cls){
   return `<div class="codeBox ${cls||''}">
     <div class="codeLabel">${label}</div>
     <div class="codeValue ${cls||''}">${val?val:'-'}</div>
   </div>`;
 }
 function updateUI(){
+  const lang = getLang();
   const same = expected && scanned && (norm(expected)===norm(scanned));
   const stateClass = same ? 'ok' : (expected && scanned ? 'err' : '');
-  codesEl.innerHTML = box('LISTA', expected||'', same?'ok':'') + box('PEZZO', scanned||'', stateClass);
+  codesEl.innerHTML = codeBox('LISTA', expected||'', same?'ok':'') + codeBox('PEZZO', scanned||'', stateClass);
 
   if(expected && scanned){
     if(same){
-      badge.textContent='✅ CORRETTO'; badge.className='badge ok';
-      resultText.innerHTML='Match perfetto!';
-      okSound(); if(settings.voice) speak('Codice corretto'); vibrate(60);
+      badge.textContent='✅ ' + i18n[lang].status.ready; badge.className='badge ok';
+      resultText.innerHTML=i18n[lang].status.hint;
+      okSound(); speak(i18n[lang].msg.matchOk); vibrate(60);
       pendingOK = expected;
       openQtyModal(pendingOK);
     }else{
-      badge.textContent='❌ ERRATO'; badge.className='badge err';
-      resultText.innerHTML='Codice diverso!';
-      errSound(); if(settings.voice) speak('Errore, codice diverso'); vibrate([60,60,180]);
+      badge.textContent='❌'; badge.className='badge err';
+      resultText.innerHTML=i18n[lang].msg.matchErr;
+      errSound(); speak(i18n[lang].msg.matchErr); vibrate([60,60,180]);
       pendingOK=null;
     }
   }else{
-    badge.textContent='Pronto'; badge.className='badge';
-    resultText.innerHTML='Scansiona prima la <b>LISTA</b>, poi il <b>PEZZO</b>';
+    badge.textContent=i18n[lang].status.ready; badge.className='badge';
+    resultText.innerHTML=i18n[lang].status.hint;
   }
 }
 
@@ -393,14 +584,15 @@ function showToast(text,kind='ok',ms=1800){
 /* ===== Tab Righe ===== */
 function renderRighe(){
   const tb=$('righeBody');
-  tb.innerHTML = picks.map(p=>{
+  tb.innerHTML = picks.map((p,idx)=>{
     const hh=p.ts.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
-    return `<tr><td>${hh}</td><td>${p.codice}</td><td>${p.qty}</td><td>${p.commessa||'-'}</td><td>${p.posizione||'-'}</td></tr>`;
+    const zebra = (idx%2===0) ? 'style="background:#0f1b35"' : '';
+    return `<tr ${zebra}><td>${hh}</td><td>${p.codice}</td><td>${p.qty}</td><td>${p.commessa||'-'}</td><td>${p.posizione||'-'}</td></tr>`;
   }).join('');
-  const has=picks.length>0;
-  $('scaricaCSV').disabled = !has;
-  $('scaricaPDF').disabled = !has;
-  $('svuota').disabled = !has;
+  const disabled = picks.length===0;
+  $('scaricaCSV').disabled = disabled;
+  $('scaricaPDF').disabled = disabled;
+  $('svuota').disabled = disabled;
   $('countPill').textContent = String(picks.length);
 }
 function toCSV(){
@@ -422,160 +614,62 @@ $('scaricaCSV').addEventListener('click', ()=>{
 $('svuota').addEventListener('click', ()=>{
   if(!picks.length) return;
   if(confirm('Sicuro di svuotare la sessione corrente?')){
-    picks=[]; savePicksCache(); renderRighe(); updateUI(); showToast('Sessione svuotata','err',1400);
+    picks=[]; renderRighe(); updateUI(); showToast(t('toast.cleared'),'err',1400);
   }
 });
 
-/* ===== PDF ===== */
-$('scaricaPDF').addEventListener('click', ()=>{
-  if(!picks.length) return;
-  try{ generatePDF(); }catch(e){ alert('Errore creazione PDF: '+e.message); }
-});
-
-function generatePDF(){
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ unit:'pt', format:'a4' });
-  const W = doc.internal.pageSize.getWidth();
-  const M = 36; // margin
-
-  const brand = 'Poka-Yoke PRO • Picking';
-  const now = new Date();
-  const info = getHeaderInfo();
-  const totals = getTotals();
-
-  /* Header bar (scura) */
-  doc.setFillColor(15,23,42); // #0F172A
-  doc.rect(0,0,W,70,'F');
-  doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(255,255,255);
-  doc.text(brand, M, 44);
-
-  /* Box info */
-  doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(230,237,247);
-  const lines = [
-    `Operatore: ${info.operatore || '-'}`,
-    `Commessa: ${info.commessa || '-'}`,
-    `Posizione: ${info.posizione || '-'}`,
-    `Generato: ${now.toLocaleString()}`
-  ];
-  // a destra: totali
-  const right = [
-    `Righe: ${picks.length}`,
-    `Pezzi: ${totals.qta}`
-  ];
-  // sinistra
-  lines.forEach((t,i)=> doc.text(t, M, 90 + i*16));
-  // destra
-  const rightX = W - M - 160;
-  right.forEach((t,i)=> doc.text(t, rightX, 90 + i*16));
-
-  /* Tabella */
-  const startY = 140;
-  // header riga
-  doc.setFillColor(15,27,53); // #0f1b35
-  doc.setTextColor(255,255,255);
-  doc.setFont('helvetica','bold'); doc.setFontSize(11);
-  doc.rect(M, startY, W - 2*M, 26, 'F');
-  const cols = [
-    { key:'ora', title:'Ora', width: 90 },
-    { key:'codice', title:'Codice', width: W - 2*M - 90 - 70 }, // dinamico
-    { key:'qty', title:'Q.tà', width: 70 }
-  ];
-  let x = M + 8, y = startY + 18;
-  cols.forEach(c=>{ doc.text(c.title, x, y); x += c.width; });
-
-  // righe
-  doc.setFont('helvetica','normal'); doc.setFontSize(11);
-  let rowY = startY + 26;
-  const lineH = 22;
-  picks.forEach((p,idx)=>{
-    // zebra
-    if(idx % 2 === 0){
-      doc.setFillColor(245,247,251); // #F5F7FB
-      doc.rect(M, rowY, W - 2*M, lineH, 'F');
-    }
-    doc.setTextColor(15,23,42); // testo scuro
-    let cx = M + 8; const cy = rowY + 15;
-    const hh = p.ts.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
-    // Ora
-    doc.text(hh, cx, cy);
-    cx += cols[0].width;
-    // Codice (gestione overflow)
-    const codeMaxWidth = cols[1].width - 8;
-    const codeLines = doc.splitTextToSize(p.codice, codeMaxWidth);
-    doc.text(codeLines, cx, cy);
-    cx += cols[1].width;
-    // Q.tà
-    doc.text(String(p.qty), cx, cy);
-
-    rowY += lineH;
-    // nuova pagina se serve
-    if(rowY > doc.internal.pageSize.getHeight() - 90){
-      addFooter(doc, W);
-      doc.addPage();
-      rowY = 70; // nuova pagina margine top
-    }
-  });
-
-  /* Riepilogo finale */
-  rowY += 10;
-  if(rowY > doc.internal.pageSize.getHeight() - 90){
-    addFooter(doc, W);
-    doc.addPage();
-    rowY = 70;
-  }
-  doc.setDrawColor(39,52,73);
-  doc.line(M, rowY, W - M, rowY);
-  rowY += 16;
-  doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(15,23,42);
-  doc.text(`Totale righe: ${picks.length} • Totale pezzi: ${totals.qta}`, M, rowY);
-
-  addFooter(doc, W);
-  const nome = `scheda_picking_${(info.commessa||'commessa')}.pdf`;
-  doc.save(nome);
-
-  function addFooter(doc, W){
-    const pnum = doc.getNumberOfPages();
-    doc.setFont('helvetica','normal'); doc.setFontSize(9);
-    doc.setTextColor(150,160,175);
-    const footer = `Generato il ${now.toLocaleString()} • Pag. ${pnum}`;
-    doc.text(footer, W/2, doc.internal.pageSize.getHeight()-16, {align:'center'});
-  }
-}
-
-function getHeaderInfo(){
-  return {
-    operatore: sanitize($('operatoreInput').value,64),
-    commessa: sanitize($('commessaInput').value,64),
-    posizione: sanitize($('posizioneInput').value,64)
+/* ===== Snapshot manuale ===== */
+$('saveSession').addEventListener('click', ()=>{
+  const snap = {
+    when: Date.now(),
+    fields:{
+      commessa: sanitize($('commessaInput').value,64),
+      posizione: sanitize($('posizioneInput').value,64),
+      operatore: sanitize($('operatoreInput').value,64)
+    },
+    picks: picks.map(p=>({ts:p.ts.getTime(), codice:p.codice, qty:p.qty, commessa:p.commessa, posizione:p.posizione}))
   };
-}
-function getTotals(){
-  let qta = 0;
-  picks.forEach(p=> qta += Number(p.qty||0));
-  return { qta };
-}
+  localStorage.setItem(LSKEY_SNAPSHOT, JSON.stringify(snap));
+  showToast(t('toast.saved'),'ok',1500);
+});
+$('loadSession').addEventListener('click', ()=>{
+  const raw = localStorage.getItem(LSKEY_SNAPSHOT);
+  if(!raw) return;
+  try{
+    const snap = JSON.parse(raw);
+    // ripristino campi
+    $('commessaInput').value = snap.fields?.commessa || '';
+    $('posizioneInput').value = snap.fields?.posizione || '';
+    $('operatoreInput').value = snap.fields?.operatore || '';
+    saveSessionFields();
+    // ripristino righe
+    picks = (snap.picks||[]).map(x=>({ts:new Date(x.ts), codice:x.codice, qty:x.qty, commessa:x.commessa, posizione:x.posizione}));
+    renderRighe();
+    showToast(t('toast.loaded'),'ok',1500);
+  }catch(e){}
+});
 
 /* ===== Modale quantità ===== */
 const qtyModal=$('qtyModal'), qtyInput=$('qtyInput'), qtyMinus=$('qtyMinus'), qtyPlus=$('qtyPlus'), qtyOk=$('qtyOk'), qtyCancel=$('qtyCancel'), qtyInfo=$('qtyInfo');
 function openQtyModal(code){
-  qtyInfo.innerHTML = `Codice: <b>${code}</b>`;
-  qtyInput.value=''; // campo vuoto come richiesto
+  qtyInfo.innerHTML = `${t('table.code')}: <b>${code}</b>`;
+  qtyInput.value=''; // campo vuoto di default
   qtyModal.style.display='flex';
   setTimeout(()=>qtyInput.focus(),50);
 }
 function closeQtyModal(){ qtyModal.style.display='none'; }
-qtyMinus.onclick=()=>{ const cur=parseInt(qtyInput.value||'0',10); const v=Math.max(1, (isNaN(cur)?0:cur)-1); qtyInput.value=v||''; };
-qtyPlus.onclick =()=>{ const cur=parseInt(qtyInput.value||'0',10); const v=Math.max(1, (isNaN(cur)?0:cur)+1); qtyInput.value=v; };
+qtyMinus.onclick=()=>{ const cur=parseInt(qtyInput.value||'0',10)||0; const v=Math.max(1, cur-1); qtyInput.value=v; };
+qtyPlus.onclick =()=>{ const cur=parseInt(qtyInput.value||'0',10)||0; const v=Math.max(1, cur+1); qtyInput.value=v; };
 qtyCancel.onclick=()=>{ closeQtyModal(); };
 qtyOk.onclick=()=>{
-  let qty=parseInt(qtyInput.value||'0',10);
-  if(isNaN(qty) || qty<1){ alert('Inserisci una quantità valida (>=1).'); qtyInput.focus(); return; }
+  const lang=getLang();
+  const val = parseInt(qtyInput.value||'0',10);
+  if(!(val>0)){ alert(i18n[lang].msg.qtyRequired); return; }
   if(!pendingOK){ closeQtyModal(); return; }
   const ts=new Date();
   const cm=sanitize($('commessaInput').value,64), ps=sanitize($('posizioneInput').value,64);
-  picks.push({ts, codice: sanitize(pendingOK,128), qty, commessa:cm, posizione:ps});
-  savePicksCache();
-  renderRighe(); showToast('Riga aggiunta','ok',1400);
+  picks.push({ts, codice: sanitize(pendingOK,128), qty:val, commessa:cm, posizione:ps});
+  renderRighe(); showToast(t('toast.rowAdded'),'ok',1400);
   pendingOK=null; scanned=null; updateUI(); closeQtyModal();
 };
 
@@ -584,11 +678,9 @@ $('reset').addEventListener('click', ()=>{ expected=null; scanned=null; pendingO
 
 /* ===== Camera fullscreen (BarcodeDetector ⇒ ZXing) ===== */
 const camFS=$('camFS'), camClose=$('camClose'), video=$('video'), overlay=$('overlay'), guide=$('guide'), laser=$('laser');
-let stream=null, track=null, usingZX=false;
-let currentMode=null;
+let stream=null, track=null;
 
 camClose.addEventListener('click', stopCameraFS);
-
 $('scanList').addEventListener('click', ()=>startScanFS('list'));
 $('scanItem').addEventListener('click', ()=>startScanFS('item'));
 
@@ -599,21 +691,16 @@ function canAccept(){
 }
 
 async function startScanFS(which){
-  // resta nella TAB Scanner
   activateTab('scanner');
-  // salva operatore/commessa/posizione
-  saveSessionFields();
-
+  saveSessionFields(); // salva campi
+  const lang=getLang();
   const cm=sanitize($('commessaInput').value,64), ps=sanitize($('posizioneInput').value,64);
-  if(!cm || !ps){ alert('Inserisci Numero commessa e Posizione prima di scansionare.'); return; }
+  if(!cm || !ps){ alert(i18n[lang].msg.needFields); return; }
 
   currentMode=which;
   camFS.classList.add('active');
-  try{
-    await startDetectorHybrid(); usingZX=false;
-  }catch(e){
-    await startZXingHybrid(); usingZX=true;
-  }
+  try{ await startDetectorHybrid(); }
+  catch(e){ await startZXingHybrid(); }
 }
 
 function stopCameraFS(){
@@ -622,10 +709,8 @@ function stopCameraFS(){
     if(track) track.stop();
   }catch(e){}
   stream=null; track=null; camFS.classList.remove('active');
-  // restiamo nella tab Scanner (non cambiamo)
 }
 
-/* Detector nativo */
 async function startDetectorHybrid(){
   const constraints={video:{facingMode:"environment",width:{ideal:1280},height:{ideal:720},focusMode:"continuous"}};
   const chosen=$('cameraSelect').value; if(chosen) constraints.video.deviceId={exact:chosen};
@@ -670,7 +755,6 @@ async function startDetectorHybrid(){
   loop();
 }
 
-/* ZXing fallback */
 async function startZXingHybrid(){
   const constraints={video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}};
   const chosen=$('cameraSelect').value; if(chosen) constraints.video.deviceId={ exact: chosen };
@@ -678,19 +762,16 @@ async function startZXingHybrid(){
   stream=await navigator.mediaDevices.getUserMedia(constraints);
   track=stream.getVideoTracks()[0];
 
-  // Usa il <video> già presente a schermo intero
-  video.srcObject=stream; await video.play();
-
   const formats=[ZXing.BarcodeFormat.QR_CODE,ZXing.BarcodeFormat.CODE_128,ZXing.BarcodeFormat.EAN_13,ZXing.BarcodeFormat.UPC_A,ZXing.BarcodeFormat.CODE_39];
   const hints=new Map(); hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,formats);
   const reader=new ZXing.BrowserMultiFormatReader(hints);
 
+  video.srcObject=stream; await video.play();
+
   const loop=async()=>{
     try{
-      const res=await reader.decodeFromVideoElement(video);
-      if(res && canAccept()){
-        if(pointInGuideZXing(res,video)){ processScan(res.text); return; }
-      }
+      const res=await reader.decodeFromVideoDevice(null, video);
+      if(res && canAccept()){ if(pointInGuideZXing(res,video)){ processScan(res.text); return; } }
     }catch(e){}
     requestAnimationFrame(loop);
   };
@@ -718,10 +799,8 @@ function pointInGuideZXing(result,vidEl){
 /* Gestione lettura singola */
 function processScan(text){
   const val = sanitize(text,128);
-  if(currentMode==='list'){ expected=val; }
-  else{ scanned=val; }
-  // Chiudiamo la camera sempre (sia ok che err) e restiamo nella tab Scanner
-  stopCameraFS();
+  if(currentMode==='list'){ expected=val; } else { scanned=val; }
+  stopCameraFS(); // chiudiamo camera ma restiamo nella tab Scanner
   updateUI();
 }
 
@@ -734,57 +813,137 @@ async function populateCameras(){
       vids.map(v=>`<option value="${v.deviceId}">${v.label||'Fotocamera'}</option>`).join('');
   }catch(_){}
 }
-if(navigator.mediaDevices?.enumerateDevices){ populateCameras(); }
 
-/* ===== Autosave righe + ripristino ===== */
-function savePicksCache(){
-  const data = picks.map(p=>({ts:p.ts.getTime(), codice:p.codice, qty:p.qty, commessa:p.commessa, posizione:p.posizione}));
-  localStorage.setItem(LSKEY_PICKS, JSON.stringify(data));
-  // aggiorna guardia beforeunload
-  toggleBeforeUnload();
-}
-function loadPicksCache(){
-  try{
-    const raw = localStorage.getItem(LSKEY_PICKS);
-    if(!raw) return;
-    const arr = JSON.parse(raw)||[];
-    if(arr.length){
-      picks = arr.map(x=>({ts:new Date(x.ts), codice:x.codice, qty:x.qty, commessa:x.commessa, posizione:x.posizione}));
-      renderRighe();
-      showToast(`Sessione ripristinata (${picks.length} righe)`, 'ok', 1800);
-    }
-  }catch{}
-}
-function clearPicksCache(){ localStorage.removeItem(LSKEY_PICKS); toggleBeforeUnload(); }
+/* ===== PDF (alto contrasto) ===== */
+$('scaricaPDF').addEventListener('click', ()=>{
+  if(!picks.length) return;
+  const lang=getLang();
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:'mm', format:'a4', compress:true});
+  const W=210, L=297, margin=12;
 
-/* ===== Guardia anti-refresh/chiusura ===== */
-function toggleBeforeUnload(){
-  if(picks.length>0){
-    window.onbeforeunload = (e)=>{ e.preventDefault(); e.returnValue=''; };
-  }else{
-    window.onbeforeunload = null;
+  // Header barra scura
+  doc.setFillColor(11,19,37); // #0B1325
+  doc.rect(0,0,W,20,'F');
+  doc.setFont('helvetica','bold'); doc.setTextColor(255,255,255); doc.setFontSize(16);
+  doc.text(t('pdf.title'), margin, 13);
+
+  // Metadati su fondo bianco, testo nero
+  doc.setTextColor(0,0,0);
+  doc.setFont('helvetica','normal'); doc.setFontSize(11);
+  let y = 28;
+  const meta = [
+    [t('pdf.meta.op'), $('operatoreInput').value || '-'],
+    [t('pdf.meta.job'), $('commessaInput').value || '-'],
+    [t('pdf.meta.pos'), $('posizioneInput').value || '-'],
+    [t('pdf.meta.date'), new Date().toLocaleString()]
+  ];
+  // Disegna etichette bold e valori
+  meta.forEach(([k,v],i)=>{
+    doc.setFont('helvetica','bold'); doc.text(`${k}:`, margin, y);
+    doc.setFont('helvetica','normal'); doc.text(String(v), margin+33, y);
+    y += 7;
+  });
+  // separatore
+  doc.setDrawColor(176,183,195); // #B0B7C3
+  doc.line(margin, y, W-margin, y); y += 6;
+
+  // Tabella header scuro
+  const thH=9, rowH=8;
+  const cols = [
+    { key:'time', label:t('pdf.th.time'), w:28 },
+    { key:'code', label:t('pdf.th.code'), w:110 },
+    { key:'qty',  label:t('pdf.th.qty'),  w:28 }
+  ];
+  function drawHeader(yh){
+    doc.setFillColor(15,27,53); // #0f1b35
+    doc.setTextColor(255,255,255);
+    doc.rect(margin,yh, cols.reduce((a,c)=>a+c.w,0), thH, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(11);
+    let x=margin+3;
+    cols.forEach(c=>{ doc.text(c.label, x, yh+6); x+=c.w; });
   }
-}
+  drawHeader(y); y += thH;
+
+  // Righe con zebratura
+  doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(0,0,0);
+  let zebra = false, totalQty=0;
+  for(let i=0;i<picks.length;i++){
+    const p=picks[i];
+    const hh=p.ts.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    const vals=[hh, p.codice, String(p.qty)];
+    const rowW = cols.reduce((a,c)=>a+c.w,0);
+    if(zebra){ doc.setFillColor(242,244,248); doc.rect(margin,y,rowW,rowH,'F'); } // #F2F4F8
+    // contenuto
+    let x=margin+3;
+    vals.forEach((v,idx)=>{
+      if(idx===1){
+        // codice: gestione testo lungo
+        const wMax = cols[1].w - 4;
+        const lines = doc.splitTextToSize(v, wMax);
+        // multi-line: se più di 1 riga, aumentiamo dinamicamente l'altezza riga
+        if(lines.length>1){
+          // ridisegna fondo per tutta l'altezza
+          const extraH = (lines.length-1)*5;
+          if(zebra){ doc.setFillColor(242,244,248); doc.rect(margin,y,rowW,rowH+extraH,'F'); }
+          // stampa tutte le linee
+          for(let li=0;li<lines.length;li++){
+            doc.text(lines[li], x, y+5+(li*5));
+          }
+          // time e qty verticalmente centrati sulla prima riga
+          doc.text(vals[0], margin+3, y+5);
+          doc.text(vals[2], margin+3+cols[0].w+cols[1].w, y+5);
+          y += rowH + extraH;
+        }else{
+          // singola riga
+          doc.text(vals[0], margin+3, y+5);
+          doc.text(v, x, y+5);
+          doc.text(vals[2], margin+3+cols[0].w+cols[1].w, y+5);
+          y += rowH;
+        }
+      }else{
+        // handled above to keep alignment
+      }
+    });
+    totalQty += p.qty;
+    // nuova pagina se oltre
+    if(y > L-30){
+      doc.addPage(); y = 20;
+      drawHeader(y); y += thH;
+      zebra=false;
+    }else{
+      zebra = !zebra;
+    }
+  }
+
+  // separatore
+  doc.setDrawColor(176,183,195); doc.line(margin, y, W-margin, y); y += 6;
+
+  // Sommarietto
+  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(0,0,0);
+  doc.text(`${t('pdf.summary.rows')}: ${picks.length}`, margin, y); y+=6;
+  doc.text(`${t('pdf.summary.pieces')}: ${totalQty}`, margin, y); y+=10;
+
+  // Footer
+  doc.setFont('helvetica','normal'); doc.setFontSize(9);
+  doc.text(`${t('pdf.generated')}: ${new Date().toLocaleString()}`, margin, L-10);
+
+  const filename = `scheda_picking_${($('commessaInput').value||'commessa')}_${($('operatoreInput').value||'op')}.pdf`;
+  doc.save(filename);
+});
+
+/* ===== Download CSV attiva/disattiva anche da UI ===== */
+$('scaricaPDF').disabled = true;
 
 /* ===== Avvio ===== */
+initLang();
 loadSettings();
 loadSessionFields();
-loadPicksCache();
+applyI18n();
 updateUI();
 renderRighe();
-
-/* Abilita pulsanti strutturali */
-$('scaricaCSV').disabled = picks.length===0;
-$('scaricaPDF').disabled = picks.length===0;
-
-/* Persiste dopo ogni modifica di righe */
-const origRenderRighe = renderRighe;
-renderRighe = function(){ // wrap per assicurare stato pulsanti e salvataggio (già fatto altrove, ma sicuro)
-  origRenderRighe();
-  savePicksCache();
-};
-
-/* Sostituisco le chiamate dove serve: già chiamiamo renderRighe() dopo push e svuota che richiama savePicksCache() */
+setNetBadge();
+if(navigator.mediaDevices?.enumerateDevices){ populateCameras(); }
 </script>
 </body>
 </html>
