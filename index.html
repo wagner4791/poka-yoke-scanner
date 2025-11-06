@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -61,12 +60,57 @@
   #netBadge{margin-left:auto;font-size:12px;padding:4px 8px;border-radius:8px;border:1px solid #334155}
   #netBadge.online{background:rgba(22,163,74,.12);color:#86efac;border-color:#14532d}
   #netBadge.offline{background:rgba(220,38,38,.10);color:#fecaca;border-color:#7f1d1d}
+
+  /* ===== Gate di sicurezza (Licenza + PIN) ===== */
+  .gate{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.88);z-index:100000}
+  .card{background:#0b1220;border:1px solid #334155;border-radius:16px;padding:18px;min-width:300px;max-width:92vw;box-shadow:0 10px 30px rgba(0,0,0,.6);display:flex;flex-direction:column;gap:10px}
+  .title{font-size:18px;font-weight:800}
+  .msg{min-height:1.2em;font-size:12px;color:#cbd5e1;text-align:center}
+  .inputWide{font-size:18px;text-align:center;padding:12px;border-radius:10px;border:1px solid #334155;background:#0a0f1d;color:#fff}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px}
+  .kbtn{padding:14px 0;border-radius:12px;border:1px solid #334155;background:#111827;color:#fff;font-weight:800;font-size:18px}
+  .rowMid{display:flex;gap:8px;justify-content:center}
+  .cooldown{color:#fecaca}
 </style>
 <script src="https://unpkg.com/@zxing/library@latest"></script>
 <script src="https://unpkg.com/@zxing/browser@latest"></script>
 </head>
 <body>
-<div class="wrap">
+
+<!-- ===== Gate LICENZA ===== -->
+<div id="licGate" class="gate" style="display:flex">
+  <div class="card">
+    <div class="title">🔑 Attiva licenza</div>
+    <div class="small">Inserisci la tua chiave licenza per attivare fino alla scadenza.</div>
+    <input id="licInput" class="inputWide" placeholder="Es. DEMO-2025" autocomplete="off"/>
+    <div class="rowMid">
+      <button id="licCancel" class="kbtn" style="flex:1">Esci</button>
+      <button id="licOk" class="kbtn btn-green" style="flex:1">Attiva</button>
+    </div>
+    <div id="licMsg" class="msg"></div>
+  </div>
+</div>
+
+<!-- ===== Gate PIN ===== -->
+<div id="pinGate" class="gate">
+  <div class="card">
+    <div class="title">🔒 Accesso protetto</div>
+    <input id="pinInput" class="inputWide" type="password" inputmode="numeric" autocomplete="one-time-code" placeholder="PIN" maxlength="8"/>
+    <div class="grid">
+      <button class="kbtn">1</button><button class="kbtn">2</button><button class="kbtn">3</button>
+      <button class="kbtn">4</button><button class="kbtn">5</button><button class="kbtn">6</button>
+      <button class="kbtn">7</button><button class="kbtn">8</button><button class="kbtn">9</button>
+    </div>
+    <div class="rowMid">
+      <button id="pinClear" class="kbtn" style="flex:1">Cancella</button>
+      <button class="kbtn" style="flex:1">0</button>
+      <button id="pinOk" class="kbtn btn-green" style="flex:1">OK</button>
+    </div>
+    <div id="pinMsg" class="msg"></div>
+  </div>
+</div>
+
+<div class="wrap" aria-hidden="true"><!-- nascosto finché non sblocchi -->
   <header>
     <div class="row" style="align-items:center;justify-content:space-between">
       <h1 style="flex:0 1 auto">Poka-Yoke PRO • Scanner IBRIDO</h1>
@@ -170,13 +214,172 @@
 <div id="flash"></div>
 
 <script>
-/* ================== CONFIG ==================
-   INCOLLA QUI il TUO endpoint (/exec) e il TOKEN identico a quello nello Script */
+/* ================== CONFIG ESISTENTE ================== */
 const GS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzqXsuAvs6PB0NOnMl2d6cDZXCQvl-reZL1lHmiLTCRo3xSkAc_lIwCYFPx1GQC1UE/exec';
 const GS_TOKEN    = 'TOKEN_PICKING_2025';
-/* ============================================ */
+/* ====================================================== */
 
-/* Stato rete */
+/* ===== SICUREZZA: PIN + LICENZA + NO-TIME-TRAVEL ===== */
+const PIN_MODE = 'fixed'; // oppure 'daily'
+const PIN_HASH = 'srLxBNMsY4kD4VGpsg1uJ7QdjAyEz4RYc4+Dyi8d10Q='; // SHA-256 base64 di "2025"
+
+const LICENSE_EXPIRY_MS = Date.UTC(2027,0,1,0,0,0); // 01/01/2027
+// Per la demo NON verifichiamo l'hash della chiave: salviamo la stringa e basta.
+// In produzione puoi aggiungere un confronto con un hash atteso.
+const TIME_TRAVEL_TOL_MS = 30*1000; // tolleranza 30s
+const AUTOLOCK_MS = 5*60*1000; // 5 minuti inattività
+
+const SEC_KEY = 'pypro_sec_v1'; // localStorage
+
+let sec = null; // {lastSeenMs, lic:{key,activatedMs,expiryMs}}
+let _autolockTimer = null;
+
+function loadSec(){
+  try{ sec = JSON.parse(localStorage.getItem(SEC_KEY)||'null'); }catch(_){ sec=null; }
+  if(!sec) sec = { lastSeenMs: 0, lic: null };
+}
+function saveSec(){ localStorage.setItem(SEC_KEY, JSON.stringify(sec)); }
+
+/* Gate elements */
+const licGate = document.getElementById('licGate');
+const licInput = document.getElementById('licInput');
+const licOk = document.getElementById('licOk');
+const licCancel = document.getElementById('licCancel');
+const licMsg = document.getElementById('licMsg');
+
+const pinGate = document.getElementById('pinGate');
+const pinInput = document.getElementById('pinInput');
+const pinMsg = document.getElementById('pinMsg');
+const pinButtons = Array.from(document.querySelectorAll('#pinGate .kbtn'));
+const pinClear = document.getElementById('pinClear');
+const pinOk = document.getElementById('pinOk');
+
+/* Autolock */
+function resetAutolock(){ clearTimeout(_autolockTimer); _autolockTimer=setTimeout(()=>lockToPIN('Sessione scaduta. Inserisci PIN.'), AUTOLOCK_MS); }
+['click','touchstart','keydown'].forEach(ev=>{
+  document.addEventListener(ev, ()=>{ if(pinGate.style.display==='none' && licGate.style.display==='none'){ resetAutolock(); } }, {passive:true});
+});
+
+/* Hash util */
+async function sha256B64(str){
+  const enc = new TextEncoder();
+  const buf = await crypto.subtle.digest('SHA-256', enc.encode(str));
+  let bin=''; const bytes=new Uint8Array(buf);
+  for(let i=0;i<bytes.length;i++) bin+=String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+
+/* Flow: 1) licenza valida? 2) blocco orologio? 3) PIN */
+function initSecurity(){
+  document.querySelector('.wrap').setAttribute('aria-hidden','true');
+  loadSec();
+
+  // 1) Licenza presente?
+  if(!sec.lic){
+    showLicGate();
+    return;
+  }
+  // 2) Scadenza licenza
+  const now = Date.now();
+  if(now > (sec.lic.expiryMs||0)){
+    showLicExpired();
+    return;
+  }
+  // 3) Anti time-travel
+  if(sec.lastSeenMs && now + TIME_TRAVEL_TOL_MS < sec.lastSeenMs){
+    showTimeTravelBlock();
+    return;
+  }
+  // aggiorna lastSeen
+  sec.lastSeenMs = Math.max(sec.lastSeenMs||0, now);
+  saveSec();
+
+  // 4) Vai a PIN
+  showPinGate();
+}
+
+function showLicGate(){
+  licMsg.textContent='';
+  licGate.style.display='flex';
+  pinGate.style.display='none';
+  document.querySelector('.wrap').setAttribute('aria-hidden','true');
+  licInput.value='';
+  setTimeout(()=>licInput.focus(),50);
+}
+function showLicExpired(){
+  licGate.style.display='flex';
+  document.querySelector('.wrap').setAttribute('aria-hidden','true');
+  licMsg.textContent = '❌ Licenza scaduta. Contatta il fornitore per il rinnovo.';
+  licInput.disabled = false;
+}
+function showTimeTravelBlock(){
+  licGate.style.display='flex';
+  document.querySelector('.wrap').setAttribute('aria-hidden','true');
+  licMsg.textContent = '⛔ Orologio di sistema impostato indietro. Ripristina data/ora corretta.';
+  licInput.disabled = true;
+}
+function activateLicense(){
+  const key = (licInput.value||'').trim();
+  if(!key){ licMsg.textContent='Inserisci una chiave licenza.'; return; }
+  const now = Date.now();
+  sec.lic = { key, activatedMs: now, expiryMs: LICENSE_EXPIRY_MS };
+  sec.lastSeenMs = now;
+  saveSec();
+  licGate.style.display='none';
+  showPinGate();
+}
+
+/* PIN */
+function showPinGate(){
+  pinMsg.textContent='';
+  pinGate.style.display='flex';
+  licGate.style.display='none';
+  pinInput.value='';
+  setTimeout(()=>pinInput.focus(),50);
+}
+function unlockApp(){
+  pinGate.style.display='none';
+  document.querySelector('.wrap').removeAttribute('aria-hidden');
+  resetAutolock();
+}
+pinButtons.forEach(b=>{
+  b.addEventListener('click', ()=>{
+    if(b===pinOk || b===pinClear) return;
+    pinInput.value = (pinInput.value||'') + b.textContent.trim();
+  });
+});
+pinClear.addEventListener('click', ()=> pinInput.value='');
+pinOk.addEventListener('click', checkPIN);
+async function checkPIN(){
+  const entered = (pinInput.value||'').trim();
+  if(!entered){ pinMsg.textContent='Inserisci il PIN'; return; }
+  if(PIN_MODE==='fixed'){
+    const h = await sha256B64(entered);
+    if(h===PIN_HASH){ unlockApp(); return; }
+    pinMsg.textContent='PIN errato.';
+  }else{
+    // modalità daily: implementabile se serve
+    pinMsg.textContent='Modalità PIN non supportata in questa build.';
+  }
+}
+
+/* Esci licenza */
+licCancel.addEventListener('click', ()=>{ licMsg.textContent=''; licInput.value=''; });
+licOk.addEventListener('click', activateLicense);
+
+/* Protezione continua contro time-travel (salvataggi periodici) */
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState==='visible'){
+    const now=Date.now();
+    loadSec();
+    if(sec.lic && now > (sec.lic.expiryMs||0)){ showLicExpired(); return; }
+    if(sec.lastSeenMs && now + TIME_TRAVEL_TOL_MS < sec.lastSeenMs){ showTimeTravelBlock(); return; }
+    sec.lastSeenMs = Math.max(sec.lastSeenMs||0, now);
+    saveSec();
+  }
+});
+
+/* ===== Stato rete ===== */
 const netBadge = document.getElementById('netBadge');
 function setNetBadge() {
   const on = navigator.onLine;
@@ -188,10 +391,10 @@ window.addEventListener('online', setNetBadge);
 window.addEventListener('offline', setNetBadge);
 setNetBadge();
 
-/* Risveglia la voce al primo tocco */
+/* ===== Voce ===== */
 document.addEventListener('click',()=>{speechSynthesis.getVoices();},{once:true});
 
-/* Stato app */
+/* ===== Stato app esistente ===== */
 let expected=null, scanned=null, mode=null, stream, track, confirmBuf=[], lastVal=null;
 let picks=[]; // {ts, codice, qty, commessa, posizione}
 let pendingOK=null;
@@ -223,7 +426,7 @@ function status(m){statusLine.textContent=m||''}
 function resetConfirm(){confirmBuf=[];lastVal=null;}
 function sanitize(s,max=64){return String(s||'').replace(/[^\w\-\. \/]/g,'').slice(0,max)} // lettere/numeri/underscore/dash/dot/spazio/slash
 
-/* UI codici grandi */
+/* UI codici */
 function updateUI(){
   const same = expected && scanned && (norm(expected) === norm(scanned));
   const stateClass = same ? 'ok' : (expected && scanned ? 'err' : '');
@@ -242,7 +445,7 @@ function updateUI(){
       setBadge('✅ CORRETTO','ok');
       resultText.innerHTML = 'Match perfetto!';
       flashScreen('rgba(22,163,74,.5)'); okSound(); speak("Codice corretto",1,1.1,1); vibrate(60);
-      pendingOK = expected; // o scanned: sono uguali
+      pendingOK = expected;
       openQtyModal(pendingOK);
     } else {
       setBadge('❌ ERRATO','err');
@@ -316,14 +519,10 @@ function getQueue(){ try{ return JSON.parse(localStorage.getItem(QKEY)||'[]'); }
 function setQueue(arr){ localStorage.setItem(QKEY, JSON.stringify(arr||[])); }
 async function flushQueue(){
   const q=getQueue(); if(!q.length || !navigator.onLine) return;
-  // invia a batch di 50
   while(q.length && navigator.onLine){
     const chunk = q.splice(0,50);
     const ok = await postRows(chunk).catch(()=>false);
-    if(!ok){ // rimetti e stop
-      setQueue(chunk.concat(q));
-      break;
-    }
+    if(!ok){ setQueue(chunk.concat(q)); break; }
     setQueue(q);
   }
   inviaPendenti.disabled = !getQueue().length || !navigator.onLine;
@@ -348,10 +547,7 @@ async function postRows(rows){
 }
 
 async function inviaASheetBatch() {
-  if (!picks.length) {
-    alert('Nessuna riga raccolta.');
-    return;
-  }
+  if (!picks.length) { alert('Nessuna riga raccolta.'); return; }
   const rows = picks.map(p => ({
     timestamp: p.ts.getTime(),
     codice: p.codice,
@@ -366,7 +562,6 @@ async function inviaASheetBatch() {
     flashScreen('rgba(22,163,74,.45)'); speak("Picking finalizzato e inviato al foglio.",1,1.05,1); vibrate(80);
     alert(`✅ Inviate ${rows.length} righe al foglio Google.`);
   } catch (err) {
-    // salva in coda offline
     const q = getQueue();
     setQueue(q.concat(rows));
     inviaPendenti.disabled = !navigator.onLine ? true : false;
@@ -382,9 +577,9 @@ el('reset').onclick=()=>{expected=null;scanned=null;pendingOK=null;updateUI();};
 scaricaCSV.onclick = downloadCSV;
 finalizza.onclick = async ()=>{
   if(!picks.length){ alert('Nessuna riga raccolta.'); return; }
-  downloadCSV();            // opzionale
-  await inviaASheetBatch(); // invio o coda offline
-  flushQueue();             // prova a svuotare eventuali pendenti
+  downloadCSV();
+  await inviaASheetBatch();
+  flushQueue();
 };
 inviaPendenti.onclick=()=>flushQueue();
 
@@ -411,16 +606,16 @@ async function startScan(which){
   mode=which; cameraArea.style.display='block'; resetConfirm(); status('Avvio camera…');
 
   clearTimeout(cameraIdleTimer);
-  cameraIdleTimer = setTimeout(()=>{ stopStream(); cameraArea.style.display='none'; }, 60_000); // auto stop dopo 60s
+  cameraIdleTimer = setTimeout(()=>{ stopStream(); cameraArea.style.display='none'; }, 60_000);
 
   if('BarcodeDetector' in window){
     try{ await startDetectorHybrid(); return; }
-    catch(e){ /* fallback giù */ }
+    catch(e){ /* fallback */ }
   }
   await startZXingHybrid();
 }
 
-/* Debounce lettura (blocca multipli in < 600ms) */
+/* Debounce lettura */
 function canAccept(){
   const now = performance.now();
   if(now - lastScanTs < 600) return false;
@@ -428,7 +623,7 @@ function canAccept(){
   return true;
 }
 
-/* Detector nativo (ibrido QR + 1D) */
+/* Detector nativo */
 async function startDetectorHybrid(){
   const constraints={video:{facingMode:"environment",width:{ideal:1280},height:{ideal:720},focusMode:"continuous"}};
   const chosen = cameraSelect.value;
@@ -506,7 +701,7 @@ async function startZXingHybrid(){
   loop();
 }
 
-/* ROI per ZXing */
+/* ROI ZXing */
 function pointInGuideZXing(result,vidEl){
   try{
     const pts=result.resultPoints||[]; if(pts.length===0) return true;
@@ -526,7 +721,7 @@ function pointInGuideZXing(result,vidEl){
   }catch(e){ return true; }
 }
 
-/* Gestione lettura singola */
+/* Gestione lettura */
 function processScan(text){
   const val = sanitize(text,128);
   if(mode==='list') expected = val; else scanned = val;
@@ -543,7 +738,7 @@ function stopStream(){
   clearTimeout(cameraIdleTimer); cameraIdleTimer=null;
 }
 
-/* LED / Zoom (se supportati) */
+/* LED / Zoom */
 function setupControls(track){
   btnTorch.disabled=true;
   try{
@@ -575,11 +770,12 @@ function setupControls(track){
   }catch(e){}
 }
 
-/* Avvio */
+/* Avvio UI + Sicurezza */
 updateUI();
-
-/* flush automatico pendenti quando torna la rete */
 window.addEventListener('online', ()=>flushQueue());
+
+// avvia flusso di sicurezza
+initSecurity();
 </script>
 </body>
 </html>
