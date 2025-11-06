@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-<title>Poka-Yoke • Scanner IBRIDO (QR + Barcode) • Invio a Google Sheet</title>
+<title>Poka-Yoke PRO • Scanner IBRIDO (QR + Barcode) • Invio sicuro</title>
 <style>
-  :root{--ok:#16a34a;--err:#dc2626;--panel:#0f172a}
+  :root{--ok:#16a34a;--err:#dc2626;--panel:#0f172a;--fg:#e5e7eb;--muted:#94a3b8}
   html,body{margin:0;height:100%;background:#000;color:#fff;font-family:system-ui,Segoe UI,Roboto,Arial}
   .wrap{min-height:100%;display:flex;flex-direction:column}
   header{padding:12px 16px;background:#0a0f1d;border-bottom:1px solid #1f2937}
@@ -17,30 +17,32 @@
   .btn:active{transform:scale(.98)}
   .btn-sm{flex:0 0 auto;font-size:14px;padding:10px 12px}
   .btn-blue{background:#1e293b;border-color:#334155}
+  .btn-green{background:#14532d;border-color:#14532d}
+  .btn-outline{background:#0b1220;border-color:#334155}
   .status{display:flex;flex-direction:column;gap:6px;align-items:center;text-align:center}
   #resultText{font-size:20px;margin:4px 0 2px}
   #codes{display:flex;flex-direction:column;gap:10px;align-items:stretch;margin-top:4px}
   .codeBox{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-radius:12px;border:1px solid #334155;background:#0b1220}
   .codeLabel{font-size:14px;color:#9ca3af;font-weight:700}
-  .codeValue{flex:1;text-align:right;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-weight:900;letter-spacing:.5px;font-size:clamp(22px,3.8vh,40px);color:#e5e7eb;word-break:break-all}
+  .codeValue{flex:1;text-align:right;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-weight:900;letter-spacing:.5px;font-size:clamp(22px,3.8vh,40px);color:var(--fg);word-break:break-all}
   .codeBox.ok{border-color:#14532d;background:rgba(22,163,74,.12)}
   .codeBox.err{border-color:#7f1d1d;background:rgba(220,38,38,.10)}
-  .codeValue.ok{color:#86efac}
-  .codeValue.err{color:#fecaca}
+  .codeValue.ok{color:#86efac}.codeValue.err{color:#fecaca}
   .badge{display:inline-block;padding:6px 10px;border-radius:999px;font-weight:800;border:1px solid #374151}
   .ok{background:rgba(22,163,74,.15);color:#86efac;border-color:#14532d}
   .err{background:rgba(220,38,38,.15);color:#fecaca;border-color:#7f1d1d}
+  .muted{color:var(--muted)}
   #cameraArea{display:none}
   #preview{position:relative;width:100%;max-width:520px;height:62vh;margin:auto;border-radius:12px;overflow:hidden;background:#000}
   #video{position:absolute;inset:0;object-fit:cover;width:100%;height:100%}
   #overlay{position:absolute;inset:0;pointer-events:none}
   #guide{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:30%;height:30%;border:3px solid rgba(255,255,255,.95);border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.4) inset;pointer-events:none}
-  #laser{position:absolute;left:50%;top:50%;width:50px;height:50px;border:2px solid rgba(255,50,50,.8);border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 12px rgba(255,60,60,.8);pointer-events:none}
+  #laser{position:absolute;left:50%;top:50%;width:50px;height:50px;border:2px solid rgba(255,50,50,.85);border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 12px rgba(255,60,60,.85);pointer-events:none}
   #flash{position:fixed;inset:0;pointer-events:none;opacity:0;transition:opacity .18s}
   footer{padding:10px 16px;color:#94a3b8;font-size:12px;text-align:center;border-top:1px solid #1f2937}
   .small{font-size:12px;color:#9ca3af}
   #statusLine{font-size:12px;color:#cbd5e1;text-align:center;margin-top:6px;min-height:1em}
-  .input{background:#0b1220;border:1px solid #243045;border-radius:10px;color:#e5e7eb;padding:10px 12px;font-size:16px;flex:1 1 180px}
+  .input,select{background:#0b1220;border:1px solid #243045;border-radius:10px;color:#e5e7eb;padding:10px 12px;font-size:16px;flex:1 1 180px}
   .input::placeholder{color:#64748b}
   label.field{display:flex;flex-direction:column;gap:6px;flex:1 1 180px}
   label.field span{font-size:12px;color:#9ca3af}
@@ -55,28 +57,38 @@
   .qtyBtn{padding:10px 14px;border-radius:10px;border:1px solid #334155;background:#111827;color:#fff;font-weight:800;font-size:20px;cursor:pointer}
   .qtyInput{width:100px;text-align:center;font-size:22px;font-weight:900;padding:8px 10px;border-radius:10px;border:1px solid #334155;background:#0a0f1d;color:#fff}
   .modalActions{display:flex;gap:10px;justify-content:flex-end;margin-top:8px}
-  .btn-green{background:#14532d;border-color:#14532d}
-  .btn-outline{background:#0b1220;border-color:#334155}
+  #netBadge{margin-left:auto;font-size:12px;padding:4px 8px;border-radius:8px;border:1px solid #334155}
+  #netBadge.online{background:rgba(22,163,74,.12);color:#86efac;border-color:#14532d}
+  #netBadge.offline{background:rgba(220,38,38,.10);color:#fecaca;border-color:#7f1d1d}
 </style>
 <script src="https://unpkg.com/@zxing/library@latest"></script>
 <script src="https://unpkg.com/@zxing/browser@latest"></script>
 </head>
 <body>
 <div class="wrap">
-  <header><h1>Poka-Yoke • Scanner IBRIDO (QR + Barcode) • Invio a Google Sheet</h1></header>
+  <header>
+    <div class="row" style="align-items:center;justify-content:space-between">
+      <h1 style="flex:0 1 auto">Poka-Yoke PRO • Scanner IBRIDO</h1>
+      <span id="netBadge" class="offline">Offline</span>
+    </div>
+  </header>
 
   <!-- Testata: commessa/posizione + Finalizza -->
   <div class="panel">
     <div class="row">
       <label class="field">
         <span>Numero commessa</span>
-        <input id="commessa" class="input" placeholder="Es. 024830"/>
+        <input id="commessa" class="input" placeholder="Es. 024830" autocomplete="off"/>
       </label>
       <label class="field">
         <span>Posizione</span>
-        <input id="posizione" class="input" placeholder="Es. POS 0020"/>
+        <input id="posizione" class="input" placeholder="Es. POS 0020" autocomplete="off"/>
       </label>
-      <button id="finalizza" class="btn btn-blue" style="flex:0 0 200px">🧾 Finalizza picking</button>
+      <label class="field" style="min-width:180px;flex:1 1 220px">
+        <span>Fotocamera</span>
+        <select id="cameraSelect" class="input"><option value="">(automatico)</option></select>
+      </label>
+      <button id="finalizza" class="btn btn-blue" style="flex:0 0 220px">🧾 Finalizza picking</button>
     </div>
     <div class="small" style="margin-top:6px">Compila <b>commessa</b> e <b>posizione</b> prima di iniziare.</div>
   </div>
@@ -119,7 +131,10 @@
     <div class="panel">
       <div class="row" style="align-items:center;justify-content:space-between">
         <div class="small">Righe raccolte (scheda in tempo reale)</div>
-        <button id="scaricaCSV" class="btn btn-sm btn-blue" disabled>⬇️ Scarica scheda (CSV)</button>
+        <div class="row" style="gap:8px;flex:0 0 auto">
+          <button id="scaricaCSV" class="btn btn-sm btn-blue" disabled>⬇️ Scarica scheda (CSV)</button>
+          <button id="inviaPendenti" class="btn btn-sm btn-green" disabled>⤴️ Invia pendenti</button>
+        </div>
       </div>
       <div id="righeBox" style="margin-top:8px">
         <table class="tbl" id="righeTbl">
@@ -127,10 +142,11 @@
           <tbody></tbody>
         </table>
       </div>
+      <div class="small muted" style="margin-top:6px">I dati non inviati vengono salvati in locale e inviati automaticamente quando la rete torna disponibile.</div>
     </div>
   </main>
 
-  <footer>Consenti fotocamera • Funziona meglio in Chrome Android (aggiungi alla Home)</footer>
+  <footer>Consenti fotocamera • Funziona meglio in Chrome Android (aggiungi alla Home) • Versione PRO</footer>
 </div>
 
 <!-- Modal quantità -->
@@ -153,10 +169,23 @@
 <div id="flash"></div>
 
 <script>
-/* === CONFIG Google Sheet ===
+/* ================== CONFIG ==================
    INCOLLA QUI il TUO endpoint (/exec) e il TOKEN identico a quello nello Script */
 const GS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzqXsuAvs6PB0NOnMl2d6cDZXCQvl-reZL1lHmiLTCRo3xSkAc_lIwCYFPx1GQC1UE/exec';
 const GS_TOKEN    = 'TOKEN_PICKING_2025';
+/* ============================================ */
+
+/* Stato rete */
+const netBadge = document.getElementById('netBadge');
+function setNetBadge() {
+  const on = navigator.onLine;
+  netBadge.textContent = on ? 'Online' : 'Offline';
+  netBadge.className = on ? 'online' : 'offline';
+  document.getElementById('inviaPendenti').disabled = !getQueue().length || !on;
+}
+window.addEventListener('online', setNetBadge);
+window.addEventListener('offline', setNetBadge);
+setNetBadge();
 
 /* Risveglia la voce al primo tocco */
 document.addEventListener('click',()=>{speechSynthesis.getVoices();},{once:true});
@@ -165,6 +194,8 @@ document.addEventListener('click',()=>{speechSynthesis.getVoices();},{once:true}
 let expected=null, scanned=null, mode=null, stream, track, confirmBuf=[], lastVal=null;
 let picks=[]; // {ts, codice, qty, commessa, posizione}
 let pendingOK=null;
+let lastScanTs=0;
+let cameraIdleTimer=null;
 
 /* Elementi utili */
 const el=id=>document.getElementById(id);
@@ -175,6 +206,7 @@ const confirm2=el('confirm2'), voice=el('voice'), cameraArea=el('cameraArea'), s
 const commessa=el('commessa'), posizione=el('posizione');
 const qtyModal=el('qtyModal'), qtyInput=el('qtyInput'), qtyMinus=el('qtyMinus'), qtyPlus=el('qtyPlus'), qtyOk=el('qtyOk'), qtyCancel=el('qtyCancel'), qtyInfo=el('qtyInfo');
 const scaricaCSV=el('scaricaCSV'), finalizza=el('finalizza');
+const cameraSelect=el('cameraSelect'), inviaPendenti=el('inviaPendenti');
 
 /* Audio + voce */
 let actx;
@@ -188,6 +220,7 @@ function setBadge(t,cls){badge.textContent=t;badge.className='badge '+(cls==='ok
 function norm(s){return s?String(s).trim().toUpperCase():s}
 function status(m){statusLine.textContent=m||''}
 function resetConfirm(){confirmBuf=[];lastVal=null;}
+function sanitize(s,max=64){return String(s||'').replace(/[^\w\-\. \/]/g,'').slice(0,max)} // lettere/numeri/underscore/dash/dot/spazio/slash
 
 /* UI codici grandi */
 function updateUI(){
@@ -227,7 +260,7 @@ function openQtyModal(code){
   qtyInfo.innerHTML = `Codice: <b>${code}</b>`;
   qtyInput.value = '1';
   qtyModal.style.display = 'flex';
-  qtyInput.focus();
+  setTimeout(()=>qtyInput.focus(),50);
 }
 function closeQtyModal(){ qtyModal.style.display='none'; }
 qtyMinus.onclick = ()=>{ const v=Math.max(1, parseInt(qtyInput.value||'1',10)-1); qtyInput.value=v; };
@@ -239,10 +272,10 @@ qtyOk.onclick    = ()=>{
   const ts = new Date();
   picks.push({
     ts,
-    codice: pendingOK,
+    codice: sanitize(pendingOK,128),
     qty,
-    commessa: commessa.value.trim(),
-    posizione: posizione.value.trim()
+    commessa: sanitize(commessa.value,64),
+    posizione: sanitize(posizione.value,64)
   });
   renderPicks();
   pendingOK = null;
@@ -261,13 +294,13 @@ function renderPicks(){
   scaricaCSV.disabled = picks.length===0;
 }
 
-/* CSV locale (opzionale) */
+/* CSV locale */
 function downloadCSV(){
   if(!picks.length) return;
-  const head = 'timestamp,codice,quantita,commessa,posizione\n';
+  const head = 'timestamp_ms,codice,quantita,commessa,posizione\n';
   const body = picks.map(p=>{
-    const ts = p.ts.toISOString();
-    return [ts,p.codice,p.qty,p.commessa||'',p.posizione||''].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',');
+    return [p.ts.getTime(),p.codice,p.qty,p.commessa||'',p.posizione||'']
+      .map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',');
   }).join('\n');
   const blob = new Blob([head+body], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
@@ -276,48 +309,68 @@ function downloadCSV(){
   URL.revokeObjectURL(url);
 }
 
+/* ==== Offline Queue (localStorage) ==== */
+const QKEY='poka_queue_v1';
+function getQueue(){ try{ return JSON.parse(localStorage.getItem(QKEY)||'[]'); }catch(_){ return []; } }
+function setQueue(arr){ localStorage.setItem(QKEY, JSON.stringify(arr||[])); }
+async function flushQueue(){
+  const q=getQueue(); if(!q.length || !navigator.onLine) return;
+  // invia a batch di 50
+  while(q.length && navigator.onLine){
+    const chunk = q.splice(0,50);
+    const ok = await postRows(chunk).catch(()=>false);
+    if(!ok){ // rimetti e stop
+      setQueue(chunk.concat(q));
+      break;
+    }
+    setQueue(q);
+  }
+  inviaPendenti.disabled = !getQueue().length || !navigator.onLine;
+}
+
 /* Invio batch al Google Sheet */
+async function postRows(rows){
+  const payload = { secret: GS_TOKEN, rows };
+  const r = await fetch(GS_ENDPOINT, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    redirect: 'follow',
+    cache: 'no-cache',
+    keepalive: true
+  });
+  let data=null;
+  try{ data=await r.json(); }catch(e){
+    const t=await r.text().catch(()=> ''); throw new Error(t||('HTTP '+r.status));
+  }
+  if (!r.ok || !data.ok) throw new Error(data.error || ('HTTP '+r.status));
+  return true;
+}
+
 async function inviaASheetBatch() {
   if (!picks.length) {
     alert('Nessuna riga raccolta.');
     return;
   }
- const rows = picks.map(p => ({
-  // inviamo l'epoch (ms) invece di una stringa
-  timestamp: p.ts.getTime(),
-  codice: p.codice,
-  quantita: p.qty,
-  commessa: p.commessa || commessa.value.trim(),
-  posizione: p.posizione || posizione.value.trim()
-}));
-  const payload = { secret: GS_TOKEN, rows };
+  const rows = picks.map(p => ({
+    timestamp: p.ts.getTime(),
+    codice: p.codice,
+    quantita: p.qty,
+    commessa: p.commessa || sanitize(commessa.value,64),
+    posizione: p.posizione || sanitize(posizione.value,64)
+  }));
 
   try {
-    // ⚠️ Nessun header personalizzato -> niente preflight CORS
-    const r = await fetch(GS_ENDPOINT, {
-      method: 'POST',
-      body: JSON.stringify(payload),
-      redirect: 'follow',
-      cache: 'no-cache',
-      keepalive: true
-    });
-
-    // Prova a leggere il JSON (se il server risponde correttamente)
-    let data = null;
-    try { data = await r.json(); }
-    catch(e){
-      // fallback: prova a leggere il testo per capire l'errore
-      const t = await r.text().catch(()=> '');
-      throw new Error(t ? ('Risposta non valida: '+t.slice(0,200)) : 'Risposta non valida');
-    }
-
-    if (!r.ok || !data.ok) throw new Error(data && data.error ? data.error : ('HTTP '+r.status));
-
+    if(!navigator.onLine) throw new Error('offline');
+    await postRows(rows);
     flashScreen('rgba(22,163,74,.45)'); speak("Picking finalizzato e inviato al foglio.",1,1.05,1); vibrate(80);
     alert(`✅ Inviate ${rows.length} righe al foglio Google.`);
   } catch (err) {
-    flashScreen('rgba(220,38,38,.45)'); speak("Errore di invio.",0.9,0.9,1);
-    alert('Errore durante l’invio: '+(err.message||err)+'\nControlla rete, URL o token.');
+    // salva in coda offline
+    const q = getQueue();
+    setQueue(q.concat(rows));
+    inviaPendenti.disabled = !navigator.onLine ? true : false;
+    flashScreen('rgba(220,38,38,.45)'); speak("Rete assente: dati messi in coda.",0.95,0.95,1); vibrate([80,60,80]);
+    alert('⚠️ Rete assente o errore invio.\nLe righe sono state messe in coda offline e verranno inviate appena la rete torna disponibile.');
   }
 }
 
@@ -329,31 +382,66 @@ scaricaCSV.onclick = downloadCSV;
 finalizza.onclick = async ()=>{
   if(!picks.length){ alert('Nessuna riga raccolta.'); return; }
   downloadCSV();            // opzionale
-  await inviaASheetBatch(); // invio al Google Sheet
+  await inviaASheetBatch(); // invio o coda offline
+  flushQueue();             // prova a svuotare eventuali pendenti
 };
+inviaPendenti.onclick=()=>flushQueue();
+
+/* Camera list */
+async function populateCameras(){
+  try{
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const vids = devices.filter(d=>d.kind==='videoinput');
+    cameraSelect.innerHTML = '<option value="">(automatico)</option>' +
+      vids.map(v=>`<option value="${v.deviceId}">${v.label||'Fotocamera'}</option>`).join('');
+  }catch(_){}
+}
+if(navigator.mediaDevices?.enumerateDevices){ populateCameras(); }
 
 /* Avvio scansione: Detector → ZXing */
 async function startScan(which){
-  if(!commessa.value.trim() || !posizione.value.trim()){
+  const cm = sanitize(commessa.value,64), ps = sanitize(posizione.value,64);
+  if(!cm || !ps){
     alert('Inserisci Numero commessa e Posizione prima di scansionare.');
     return;
   }
+  commessa.value = cm; posizione.value = ps;
+
   mode=which; cameraArea.style.display='block'; resetConfirm(); status('Avvio camera…');
-  if('BarcodeDetector' in window){ await startDetectorHybrid(); }
-  else { await startZXingHybrid(); }
+
+  clearTimeout(cameraIdleTimer);
+  cameraIdleTimer = setTimeout(()=>{ stopStream(); cameraArea.style.display='none'; }, 60_000); // auto stop dopo 60s
+
+  if('BarcodeDetector' in window){
+    try{ await startDetectorHybrid(); return; }
+    catch(e){ /* fallback giù */ }
+  }
+  await startZXingHybrid();
+}
+
+/* Debounce lettura (blocca multipli in < 600ms) */
+function canAccept(){
+  const now = performance.now();
+  if(now - lastScanTs < 600) return false;
+  lastScanTs = now;
+  return true;
 }
 
 /* Detector nativo (ibrido QR + 1D) */
 async function startDetectorHybrid(){
-  const cons={video:{facingMode:"environment",width:{ideal:1280},height:{ideal:720},focusMode:"continuous"}};
-  stream=await navigator.mediaDevices.getUserMedia(cons).catch(()=>null);
-  if(!stream){ alert('Fotocamera non disponibile.'); cameraArea.style.display='none'; return; }
+  const constraints={video:{facingMode:"environment",width:{ideal:1280},height:{ideal:720},focusMode:"continuous"}};
+  const chosen = cameraSelect.value;
+  if(chosen) constraints.video.deviceId = { exact: chosen };
+
+  stream=await navigator.mediaDevices.getUserMedia(constraints).catch(()=>null);
+  if(!stream){ alert('Fotocamera non disponibile o permesso negato.'); cameraArea.style.display='none'; return; }
   track=stream.getVideoTracks()[0]; video.srcObject=stream; await video.play(); setupControls(track);
 
   const detector=new BarcodeDetector({formats:['qr_code','code_128','ean_13','ean_8','upc_a','code_39']});
   const ctx=overlay.getContext('2d');
 
   const loop=()=>{
+    if(!stream){return;}
     if(video.readyState<2){ requestAnimationFrame(loop); return; }
     overlay.width=video.videoWidth; overlay.height=video.videoHeight; ctx.clearRect(0,0,overlay.width,overlay.height);
 
@@ -375,7 +463,7 @@ async function startDetectorHybrid(){
         if(inGuide && dist<radius){ accepted=c.rawValue; break; }
       }
 
-      if(accepted){
+      if(accepted && canAccept()){
         if(confirm2.checked){
           if(lastVal===accepted){ confirmBuf.push(accepted); } else { confirmBuf=[accepted]; lastVal=accepted; }
           if(confirmBuf.length>=2){ processScan(accepted); return; }
@@ -389,16 +477,19 @@ async function startDetectorHybrid(){
 
 /* ZXing fallback */
 async function startZXingHybrid(){
-  const cons={video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}};
-  const s=await navigator.mediaDevices.getUserMedia(cons).catch(()=>null);
-  if(!s){ alert('Fotocamera non disponibile.'); cameraArea.style.display='none'; return; }
+  const constraints={video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}};
+  const chosen = cameraSelect.value;
+  if(chosen) constraints.video.deviceId = { exact: chosen };
+
+  const s=await navigator.mediaDevices.getUserMedia(constraints).catch(()=>null);
+  if(!s){ alert('Fotocamera non disponibile o permesso negato.'); cameraArea.style.display='none'; return; }
   stream=s; track=stream.getVideoTracks()[0]; setupControls(track);
 
   const vid=document.createElement('video');
   vid.setAttribute('playsinline',''); vid.muted=true; vid.autoplay=true; vid.srcObject=stream;
   document.body.appendChild(vid);
 
-  const formats=[ZXing.BarcodeFormat.QR_CODE,ZXing.BarcodeFormat.CODE_128,ZXing.BarcodeFormat.EAN_13,ZXing.BarcodeFormat.UPC_A];
+  const formats=[ZXing.BarcodeFormat.QR_CODE,ZXing.BarcodeFormat.CODE_128,ZXing.BarcodeFormat.EAN_13,ZXing.BarcodeFormat.UPC_A,ZXing.BarcodeFormat.CODE_39];
   const hints=new Map(); hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,formats);
   const reader=new ZXing.BrowserMultiFormatReader(hints);
 
@@ -407,7 +498,7 @@ async function startZXingHybrid(){
   const loop=async()=>{
     try{
       const res=await reader.decodeFromVideoElement(vid);
-      if(res){ if(pointInGuideZXing(res,vid)){ processScan(res.text); return; } }
+      if(res && canAccept()){ if(pointInGuideZXing(res,vid)){ processScan(res.text); return; } }
     }catch(e){}
     requestAnimationFrame(loop);
   };
@@ -436,14 +527,19 @@ function pointInGuideZXing(result,vidEl){
 
 /* Gestione lettura singola */
 function processScan(text){
-  if(mode==='list') expected = text; else scanned = text;
+  const val = sanitize(text,128);
+  if(mode==='list') expected = val; else scanned = val;
   stopStream(); cameraArea.style.display='none'; updateUI();
 }
 
 /* Stop camera */
 function stopStream(){
-  try{ if(video.srcObject){ video.srcObject.getTracks().forEach(t=>t.stop()); video.srcObject=null; } }catch(e){}
+  try{
+    if(video.srcObject){ video.srcObject.getTracks().forEach(t=>t.stop()); video.srcObject=null; }
+    if(track) track.stop();
+  }catch(e){}
   status('');
+  clearTimeout(cameraIdleTimer); cameraIdleTimer=null;
 }
 
 /* LED / Zoom (se supportati) */
@@ -480,9 +576,13 @@ function setupControls(track){
 
 /* Avvio */
 updateUI();
+
+/* flush automatico pendenti quando torna la rete */
+window.addEventListener('online', ()=>flushQueue());
 </script>
 </body>
 </html>
+
 
 
 
