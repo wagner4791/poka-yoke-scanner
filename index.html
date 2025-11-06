@@ -3,142 +3,143 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-<title>Poka-Yoke PRO • Scanner IBRIDO (QR + Barcode) • Invio sicuro</title>
+<title>Poka-Yoke PRO • Scanner IBRIDO (QR + Barcode)</title>
 <style>
-  :root{--ok:#16a34a;--err:#dc2626;--panel:#0f172a;--fg:#e5e7eb;--muted:#94a3b8}
-  html,body{margin:0;height:100%;background:#000;color:#fff;font-family:system-ui,Segoe UI,Roboto,Arial}
+  :root{--ok:#16a34a;--err:#dc2626;--panel:#0f172a;--fg:#e5e7eb;--muted:#94a3b8;--ink:#e5e7eb;--line:#1f2937}
+  html,body{margin:0;height:100%;background:#000;color:var(--fg);font-family:system-ui,Segoe UI,Roboto,Arial}
   .wrap{min-height:100%;display:flex;flex-direction:column}
-  header{padding:12px 16px;background:#0a0f1d;border-bottom:1px solid #1f2937}
-  header h1{margin:0;font-size:18px}
-  main{flex:1;display:flex;flex-direction:column;gap:12px;padding:12px}
-  .panel{background:var(--panel);border:1px solid #1f2937;border-radius:14px;padding:14px}
+  header{padding:10px 12px;background:#0a0f1d;border-bottom:1px solid var(--line)}
+  .topbar{display:flex;align-items:center;gap:10px}
+  .brand{font-weight:800}
+  .tabs{display:flex;gap:6px;margin-left:8px}
+  .tab{padding:8px 10px;border:1px solid #334155;background:#0b1220;border-radius:10px;cursor:pointer;font-weight:700}
+  .tab.active{background:#111827}
+  .spacer{flex:1}
+  .gear{border:1px solid #334155;background:#0b1220;border-radius:10px;padding:8px 10px;cursor:pointer}
+  main{flex:1;padding:12px;display:flex;flex-direction:column;gap:12px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}
   .row{display:flex;gap:10px;flex-wrap:wrap}
-  .btn{flex:1 1 150px;padding:12px 14px;border-radius:12px;border:1px solid #243045;background:#111827;color:#fff;font-size:16px;font-weight:700;cursor:pointer}
+  .input,select{background:#0b1220;border:1px solid #243045;border-radius:10px;color:var(--fg);padding:10px 12px;font-size:16px;flex:1 1 180px}
+  .input::placeholder{color:#64748b}
+  label.field{display:flex;flex-direction:column;gap:6px;flex:1 1 220px;min-width:200px}
+  label.field span{font-size:12px;color:#9ca3af}
+  .btn{flex:1 1 150px;padding:12px 14px;border-radius:12px;border:1px solid #243045;background:#111827;color:#fff;font-size:16px;font-weight:800;cursor:pointer}
   .btn:active{transform:scale(.98)}
-  .btn-sm{flex:0 0 auto;font-size:14px;padding:10px 12px}
   .btn-blue{background:#1e293b;border-color:#334155}
   .btn-green{background:#14532d;border-color:#14532d}
-  .btn-outline{background:#0b1220;border-color:#334155}
-  .status{display:flex;flex-direction:column;gap:6px;align-items:center;text-align:center}
-  #resultText{font-size:20px;margin:4px 0 2px}
-  #codes{display:flex;flex-direction:column;gap:10px;align-items:stretch;margin-top:4px}
-  .codeBox{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-radius:12px;border:1px solid #334155;background:#0b1220}
-  .codeLabel{font-size:14px;color:#9ca3af;font-weight:700}
-  .codeValue{flex:1;text-align:right;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-weight:900;letter-spacing:.5px;font-size:clamp(22px,3.8vh,40px);color:var(--fg);word-break:break-all}
-  .codeBox.ok{border-color:#14532d;background:rgba(22,163,74,.12)}
-  .codeBox.err{border-color:#7f1d1d;background:rgba(220,38,38,.10)}
-  .codeValue.ok{color:#86efac}.codeValue.err{color:#fecaca}
-  .badge{display:inline-block;padding:6px 10px;border-radius:999px;font-weight:800;border:1px solid #374151}
-  .ok{background:rgba(22,163,74,.15);color:#86efac;border-color:#14532d}
-  .err{background:rgba(220,38,38,.15);color:#fecaca;border-color:#7f1d1d}
-  .muted{color:var(--muted)}
-  #cameraArea{display:none}
-  #preview{position:relative;width:100%;max-width:520px;height:62vh;margin:auto;border-radius:12px;overflow:hidden;background:#000}
-  #video{position:absolute;inset:0;object-fit:cover;width:100%;height:100%}
-  #overlay{position:absolute;inset:0;pointer-events:none}
-  #guide{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:30%;height:30%;border:3px solid rgba(255,255,255,.95);border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.4) inset;pointer-events:none}
-  #laser{position:absolute;left:50%;top:50%;width:50px;height:50px;border:2px solid rgba(255,50,50,.85);border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 12px rgba(255,60,60,.85);pointer-events:none}
-  #flash{position:fixed;inset:0;pointer-events:none;opacity:0;transition:opacity .18s}
-  footer{padding:10px 16px;color:#94a3b8;font-size:12px;text-align:center;border-top:1px solid #1f2937}
+  .btn-ghost{background:#0b1220;border-color:#334155}
   .small{font-size:12px;color:#9ca3af}
+  /* status */
+  .status{display:flex;flex-direction:column;gap:6px;align-items:center;text-align:center}
+  .badge{display:inline-block;padding:6px 10px;border-radius:999px;font-weight:800;border:1px solid #374151}
+  .badge.ok{background:rgba(22,163,74,.15);color:#86efac;border-color:#14532d}
+  .badge.err{background:rgba(220,38,38,.15);color:#fecaca;border-color:#7f1d1d}
+  #resultText{font-size:20px;margin:4px 0 2px}
+  #codes{display:flex;flex-direction:column;gap:10px;width:100%;max-width:700px}
+  .codeBox{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-radius:12px;border:1px solid #334155;background:#0b1220}
+  .codeLabel{font-size:14px;color:#9ca3af;font-weight:800}
+  .codeValue{flex:1;text-align:right;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-weight:900;letter-spacing:.5px;font-size:clamp(22px,3.6vh,40px);color:#e5e7eb;word-break:break-all}
+  .codeBox.ok{border-color:#14532d;background:rgba(22,163,74,.10)}
+  .codeBox.err{border-color:#7f1d1d;background:rgba(220,38,38,.08)}
+  .codeValue.ok{color:#86efac}.codeValue.err{color:#fecaca}
   #statusLine{font-size:12px;color:#cbd5e1;text-align:center;margin-top:6px;min-height:1em}
-  .input,select{background:#0b1220;border:1px solid #243045;border-radius:10px;color:#e5e7eb;padding:10px 12px;font-size:16px;flex:1 1 180px}
-  .input::placeholder{color:#64748b}
-  label.field{display:flex;flex-direction:column;gap:6px;flex:1 1 180px}
-  label.field span{font-size:12px;color:#9ca3af}
-  #righeBox{max-height:28vh;overflow:auto;border:1px solid #1f2937;border-radius:10px}
+  /* camera */
+  #cameraPanel{display:none}
+  #fsCam{position:fixed;inset:0;display:none;background:#000;z-index:9999}
+  #preview{position:relative;width:100%;height:100%}
+  #video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  #overlay{position:absolute;inset:0;pointer-events:none}
+  #guide{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(60vmin,60%);height:min(60vmin,60%);border:3px solid rgba(255,255,255,.95);border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.4) inset;pointer-events:none}
+  #laser{position:absolute;left:50%;top:50%;width:56px;height:56px;border:2px solid rgba(255,60,60,.9);border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 14px rgba(255,60,60,.85);pointer-events:none}
+  .fsTop{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;z-index:2}
+  .fsBtn{background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:10px;padding:8px 12px;font-weight:800}
+  #flash{position:fixed;inset:0;pointer-events:none;opacity:0;transition:opacity .18s}
+  /* table */
+  #righeBox{max-height:54vh;overflow:auto;border:1px solid var(--line);border-radius:10px}
   .tbl{width:100%;border-collapse:collapse}
-  .tbl th,.tbl td{padding:8px 10px;border-bottom:1px solid #1f2937;font-size:14px}
-  .tbl th{position:sticky;top:0;background:#0a0f1d;text-align:left;font-weight:800}
-  #qtyModal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:9999}
-  .modalCard{background:#0b1220;border:1px solid #334155;border-radius:14px;padding:16px;min-width:280px;max-width:90vw;box-shadow:0 10px 30px rgba(0,0,0,.6)}
-  .modalTitle{font-weight:800;margin-bottom:8px}
-  .qtyRow{display:flex;gap:10px;align-items:center;justify-content:center;margin:12px 0}
-  .qtyBtn{padding:10px 14px;border-radius:10px;border:1px solid #334155;background:#111827;color:#fff;font-weight:800;font-size:20px;cursor:pointer}
-  .qtyInput{width:100px;text-align:center;font-size:22px;font-weight:900;padding:8px 10px;border-radius:10px;border:1px solid #334155;background:#0a0f1d;color:#fff}
-  .modalActions{display:flex;gap:10px;justify-content:flex-end;margin-top:8px}
-  #netBadge{margin-left:auto;font-size:12px;padding:4px 8px;border-radius:8px;border:1px solid #334155}
-  #netBadge.online{background:rgba(22,163,74,.12);color:#86efac;border-color:#14532d}
-  #netBadge.offline{background:rgba(220,38,38,.10);color:#fecaca;border-color:#7f1d1d}
-
-  /* ===== Gate di sicurezza (Licenza + PIN) ===== */
-  .gate{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.88);z-index:100000}
-  .card{background:#0b1220;border:1px solid #334155;border-radius:16px;padding:18px;min-width:300px;max-width:92vw;box-shadow:0 10px 30px rgba(0,0,0,.6);display:flex;flex-direction:column;gap:10px}
-  .title{font-size:18px;font-weight:800}
-  .msg{min-height:1.2em;font-size:12px;color:#cbd5e1;text-align:center}
-  .inputWide{font-size:18px;text-align:center;padding:12px;border-radius:10px;border:1px solid #334155;background:#0a0f1d;color:#fff}
-  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px}
-  .kbtn{padding:14px 0;border-radius:12px;border:1px solid #334155;background:#111827;color:#fff;font-weight:800;font-size:18px}
-  .rowMid{display:flex;gap:8px;justify-content:center}
+  .tbl th,.tbl td{padding:10px;border-bottom:1px solid var(--line);font-size:14px}
+  .tbl th{position:sticky;top:0;background:#0a0f1d;text-align:left;font-weight:900}
+  /* pin gate */
+  #pinGate{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.85);z-index:10000}
+  .pinCard{background:#0b1220;border:1px solid #334155;border-radius:16px;padding:18px;min-width:300px;max-width:92vw;box-shadow:0 10px 30px rgba(0,0,0,.6);display:flex;flex-direction:column;gap:10px}
+  .pinTitle{font-weight:900}
+  .pinInput{font-size:22px;letter-spacing:4px;text-align:center;padding:10px;border-radius:10px;border:1px solid #334155;background:#0a0f1d;color:#fff}
+  .pinGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px}
+  .pinBtn{padding:14px 0;border-radius:12px;border:1px solid #334155;background:#111827;color:#fff;font-weight:800;font-size:18px}
+  .pinRow{display:flex;gap:8px;justify-content:center}
+  .pinMsg{min-height:1em;font-size:12px;color:#cbd5e1;text-align:center}
   .cooldown{color:#fecaca}
+  /* settings drawer */
+  #settings{position:fixed;right:10px;top:56px;width:min(92vw,380px);background:#0b1220;border:1px solid #334155;border-radius:14px;padding:14px;display:none;z-index:9000}
+  .setRow{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #253046}
+  .setRow:last-child{border-bottom:none}
+  .switch{appearance:none;width:42px;height:24px;border-radius:999px;background:#253046;position:relative;outline:none;cursor:pointer}
+  .switch:checked{background:#14532d}
+  .switch::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .18s}
+  .switch:checked::after{transform:translateX(18px)}
+  footer{padding:10px 12px;color:#94a3b8;font-size:12px;text-align:center;border-top:1px solid var(--line)}
+  .hidden{display:none!important}
 </style>
 <script src="https://unpkg.com/@zxing/library@latest"></script>
 <script src="https://unpkg.com/@zxing/browser@latest"></script>
 </head>
 <body>
-
-<!-- ===== Gate LICENZA ===== -->
-<div id="licGate" class="gate" style="display:flex">
-  <div class="card">
-    <div class="title">🔑 Attiva licenza</div>
-    <div class="small">Inserisci la tua chiave licenza per attivare fino alla scadenza.</div>
-    <input id="licInput" class="inputWide" placeholder="Es. DEMO-2025" autocomplete="off"/>
-    <div class="rowMid">
-      <button id="licCancel" class="kbtn" style="flex:1">Esci</button>
-      <button id="licOk" class="kbtn btn-green" style="flex:1">Attiva</button>
+<!-- ===== PIN GATE + LICENZA ===== -->
+<div id="pinGate">
+  <div class="pinCard">
+    <div class="pinTitle">🔒 Accesso protetto</div>
+    <input id="pinInput" class="pinInput" type="password" inputmode="numeric" autocomplete="one-time-code" placeholder="PIN" maxlength="8"/>
+    <div class="pinGrid">
+      <button class="pinBtn">1</button><button class="pinBtn">2</button><button class="pinBtn">3</button>
+      <button class="pinBtn">4</button><button class="pinBtn">5</button><button class="pinBtn">6</button>
+      <button class="pinBtn">7</button><button class="pinBtn">8</button><button class="pinBtn">9</button>
     </div>
-    <div id="licMsg" class="msg"></div>
+    <div class="pinRow">
+      <button id="pinClear" class="pinBtn" style="flex:1">Cancella</button>
+      <button class="pinBtn" style="flex:1">0</button>
+      <button id="pinOk" class="pinBtn btn-green" style="flex:1">OK</button>
+    </div>
+    <div id="pinMsg" class="pinMsg"></div>
   </div>
 </div>
 
-<!-- ===== Gate PIN ===== -->
-<div id="pinGate" class="gate">
-  <div class="card">
-    <div class="title">🔒 Accesso protetto</div>
-    <input id="pinInput" class="inputWide" type="password" inputmode="numeric" autocomplete="one-time-code" placeholder="PIN" maxlength="8"/>
-    <div class="grid">
-      <button class="kbtn">1</button><button class="kbtn">2</button><button class="kbtn">3</button>
-      <button class="kbtn">4</button><button class="kbtn">5</button><button class="kbtn">6</button>
-      <button class="kbtn">7</button><button class="kbtn">8</button><button class="kbtn">9</button>
-    </div>
-    <div class="rowMid">
-      <button id="pinClear" class="kbtn" style="flex:1">Cancella</button>
-      <button class="kbtn" style="flex:1">0</button>
-      <button id="pinOk" class="kbtn btn-green" style="flex:1">OK</button>
-    </div>
-    <div id="pinMsg" class="msg"></div>
-  </div>
-</div>
-
-<div class="wrap" aria-hidden="true"><!-- nascosto finché non sblocchi -->
+<div class="wrap" aria-hidden="true">
   <header>
-    <div class="row" style="align-items:center;justify-content:space-between">
-      <h1 style="flex:0 1 auto">Poka-Yoke PRO • Scanner IBRIDO</h1>
-      <span id="netBadge" class="offline">Offline</span>
+    <div class="topbar">
+      <div class="brand">Poka-Yoke PRO</div>
+      <div class="tabs">
+        <button class="tab active" data-tab="commessa">Commessa</button>
+        <button class="tab" data-tab="scanner">Scanner</button>
+        <button class="tab" data-tab="righe">Righe raccolte</button>
+      </div>
+      <div class="spacer"></div>
+      <button id="btnGear" class="gear">⚙️</button>
     </div>
   </header>
 
-  <!-- Testata: commessa/posizione + Finalizza -->
-  <div class="panel">
-    <div class="row">
-      <label class="field">
-        <span>Numero commessa</span>
-        <input id="commessa" class="input" placeholder="Es. 024830" autocomplete="off"/>
-      </label>
-      <label class="field">
-        <span>Posizione</span>
-        <input id="posizione" class="input" placeholder="Es. POS 0020" autocomplete="off"/>
-      </label>
-      <label class="field" style="min-width:180px;flex:1 1 220px">
-        <span>Fotocamera</span>
-        <select id="cameraSelect" class="input"><option value="">(automatico)</option></select>
-      </label>
-      <button id="finalizza" class="btn btn-blue" style="flex:0 0 220px">🧾 Finalizza picking</button>
+  <!-- ===== SEZIONE COMMESSA ===== -->
+  <section id="tab-commessa">
+    <div class="panel">
+      <div class="row">
+        <label class="field">
+          <span>Numero commessa</span>
+          <input id="commessa" class="input" placeholder="Es. 024830" autocomplete="off"/>
+        </label>
+        <label class="field">
+          <span>Posizione</span>
+          <input id="posizione" class="input" placeholder="Es. POS 0020" autocomplete="off"/>
+        </label>
+        <label class="field" style="min-width:200px;flex:1 1 260px">
+          <span>Fotocamera</span>
+          <select id="cameraSelect" class="input"><option value="">(automatica)</option></select>
+        </label>
+      </div>
+      <div class="small" style="margin-top:6px">Compila <b>commessa</b> e <b>posizione</b> prima di scansionare.</div>
     </div>
-    <div class="small" style="margin-top:6px">Compila <b>commessa</b> e <b>posizione</b> prima di iniziare.</div>
-  </div>
+  </section>
 
-  <main>
+  <!-- ===== SEZIONE SCANNER ===== -->
+  <section id="tab-scanner" class="hidden">
     <div class="panel status">
       <div id="badge" class="badge">Pronto</div>
       <div id="resultText">Scansiona prima la <b>LISTA</b>, poi il <b>PEZZO</b></div>
@@ -148,37 +149,22 @@
 
     <div class="panel">
       <div class="row">
-        <button id="scanList" class="btn">📋 LISTA</button>
-        <button id="scanItem" class="btn">📦 PEZZO</button>
-        <button id="reset" class="btn">🔄 Reset</button>
+        <button id="scanList" class="btn btn-blue">📋 LISTA</button>
+        <button id="scanItem" class="btn btn-blue">📦 PEZZO</button>
+        <button id="reset" class="btn btn-ghost">🔄 Reset</button>
       </div>
-      <div class="row" style="margin-top:8px">
-        <button id="torch" class="btn btn-sm" disabled>🔦 LED</button>
-        <button id="zoomIn" class="btn btn-sm" disabled>🔎 +</button>
-        <button id="zoomOut" class="btn btn-sm" disabled>🔍 −</button>
-        <label class="small"><input type="checkbox" id="confirm2" checked> Conferma doppia</label>
-        <label class="small"><input type="checkbox" id="voice" checked> Annuncio vocale</label>
-        <span id="statusLine"></span>
-      </div>
+      <div id="statusLine" class="small"></div>
     </div>
+  </section>
 
-    <div id="cameraArea" class="panel">
-      <div id="preview">
-        <video id="video" muted playsinline></video>
-        <canvas id="overlay"></canvas>
-        <div id="guide"></div>
-        <div id="laser"></div>
-      </div>
-      <div class="small" style="text-align:center;margin-top:6px">Se fatica: usa <b>Zoom</b> o attiva <b>LED</b>.</div>
-    </div>
-
-    <!-- Righe raccolte -->
+  <!-- ===== SEZIONE RIGHE ===== -->
+  <section id="tab-righe" class="hidden">
     <div class="panel">
       <div class="row" style="align-items:center;justify-content:space-between">
         <div class="small">Righe raccolte (scheda in tempo reale)</div>
         <div class="row" style="gap:8px;flex:0 0 auto">
-          <button id="scaricaCSV" class="btn btn-sm btn-blue" disabled>⬇️ Scarica scheda (CSV)</button>
-          <button id="inviaPendenti" class="btn btn-sm btn-green" disabled>⤴️ Invia pendenti</button>
+          <button id="scaricaCSV" class="btn btn-blue" disabled>⬇️ Scarica CSV</button>
+          <button id="svuota" class="btn btn-ghost" disabled>🗑️ Svuota</button>
         </div>
       </div>
       <div id="righeBox" style="margin-top:8px">
@@ -187,595 +173,337 @@
           <tbody></tbody>
         </table>
       </div>
-      <div class="small muted" style="margin-top:6px">I dati non inviati vengono salvati in locale e inviati automaticamente quando la rete torna disponibile.</div>
+      <div class="small" style="margin-top:6px;color:#9ca3af">Dati salvati localmente sul dispositivo. Nessun invio in rete.</div>
     </div>
-  </main>
+  </section>
 
-  <footer>Consenti fotocamera • Funziona meglio in Chrome Android (aggiungi alla Home) • Versione PRO</footer>
+  <footer>Modalità locale • Aggiungi alla Home per esperienza tipo app</footer>
 </div>
 
-<!-- Modal quantità -->
-<div id="qtyModal">
-  <div class="modalCard">
-    <div class="modalTitle">Inserisci quantità prelevata</div>
-    <div id="qtyInfo" class="small" style="margin-bottom:6px;color:#cbd5e1"></div>
-    <div class="qtyRow">
-      <button id="qtyMinus" class="qtyBtn">−</button>
-      <input id="qtyInput" class="qtyInput" type="number" min="1" step="1" value="1" />
-      <button id="qtyPlus" class="qtyBtn">+</button>
-    </div>
-    <div class="modalActions">
-      <button id="qtyCancel" class="btn btn-sm btn-outline">Annulla</button>
-      <button id="qtyOk" class="btn btn-sm btn-green">Conferma</button>
-    </div>
+<!-- ===== SETTINGS DRAWER ===== -->
+<div id="settings">
+  <div class="setRow"><div>Conferma doppia</div><input id="setConfirm" type="checkbox" class="switch"></div>
+  <div class="setRow"><div>Annuncio vocale</div><input id="setVoice" type="checkbox" class="switch"></div>
+  <div class="setRow"><button id="resetDefaults" class="btn btn-ghost" style="width:100%">Ripristina predefiniti</button></div>
+</div>
+
+<!-- ===== FULLSCREEN CAMERA LAYER ===== -->
+<div id="fsCam">
+  <div class="fsTop">
+    <button id="fsClose" class="fsBtn">✕ Chiudi</button>
+    <div class="small" id="fsHint">Inquadra e centra nel cerchio rosso</div>
+  </div>
+  <div id="preview">
+    <video id="video" muted playsinline></video>
+    <canvas id="overlay"></canvas>
+    <div id="guide"></div>
+    <div id="laser"></div>
   </div>
 </div>
 
 <div id="flash"></div>
 
 <script>
-/* ================== CONFIG ESISTENTE ================== */
-const GS_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzqXsuAvs6PB0NOnMl2d6cDZXCQvl-reZL1lHmiLTCRo3xSkAc_lIwCYFPx1GQC1UE/exec';
-const GS_TOKEN    = 'TOKEN_PICKING_2025';
-/* ====================================================== */
-
-/* ===== SICUREZZA: PIN + LICENZA + NO-TIME-TRAVEL ===== */
-const PIN_MODE = 'fixed'; // oppure 'daily'
-const PIN_HASH = 'srLxBNMsY4kD4VGpsg1uJ7QdjAyEz4RYc4+Dyi8d10Q='; // SHA-256 base64 di "2025"
-
-const LICENSE_EXPIRY_MS = Date.UTC(2027,0,1,0,0,0); // 01/01/2027
-// Per la demo NON verifichiamo l'hash della chiave: salviamo la stringa e basta.
-// In produzione puoi aggiungere un confronto con un hash atteso.
-const TIME_TRAVEL_TOL_MS = 30*1000; // tolleranza 30s
-const AUTOLOCK_MS = 5*60*1000; // 5 minuti inattività
-
-const SEC_KEY = 'pypro_sec_v1'; // localStorage
-
-let sec = null; // {lastSeenMs, lic:{key,activatedMs,expiryMs}}
-let _autolockTimer = null;
-
-function loadSec(){
-  try{ sec = JSON.parse(localStorage.getItem(SEC_KEY)||'null'); }catch(_){ sec=null; }
-  if(!sec) sec = { lastSeenMs: 0, lic: null };
-}
-function saveSec(){ localStorage.setItem(SEC_KEY, JSON.stringify(sec)); }
-
-/* Gate elements */
-const licGate = document.getElementById('licGate');
-const licInput = document.getElementById('licInput');
-const licOk = document.getElementById('licOk');
-const licCancel = document.getElementById('licCancel');
-const licMsg = document.getElementById('licMsg');
+/* ====== SICUREZZA: PIN + LICENZA + NO TIME TRAVEL ====== */
+const PIN_MODE = 'fixed';
+const PIN_HASH = 'srLxBNMsY4kD4VGpsg1uJ7QdjAyEz4RYc4+Dyi8d10Q='; // sha256 base64 di "2025"
+const LICENSE_EXPIRY = '2027-01-01'; // ISO yyyy-mm-dd
+const NO_BACK_KEY='py_no_back_epoch'; // anti time-travel
 
 const pinGate = document.getElementById('pinGate');
 const pinInput = document.getElementById('pinInput');
 const pinMsg = document.getElementById('pinMsg');
-const pinButtons = Array.from(document.querySelectorAll('#pinGate .kbtn'));
+const pinButtons = Array.from(document.querySelectorAll('.pinBtn'));
 const pinClear = document.getElementById('pinClear');
 const pinOk = document.getElementById('pinOk');
+let pinAttempts = 0, pinLockedUntil = 0;
 
-/* Autolock */
-function resetAutolock(){ clearTimeout(_autolockTimer); _autolockTimer=setTimeout(()=>lockToPIN('Sessione scaduta. Inserisci PIN.'), AUTOLOCK_MS); }
-['click','touchstart','keydown'].forEach(ev=>{
-  document.addEventListener(ev, ()=>{ if(pinGate.style.display==='none' && licGate.style.display==='none'){ resetAutolock(); } }, {passive:true});
-});
+function lockApp(msg){ document.querySelector('.wrap').setAttribute('aria-hidden','true'); pinGate.style.display='flex'; pinMsg.textContent=msg||''; pinInput.value=''; }
+function unlockApp(){ pinGate.style.display='none'; document.querySelector('.wrap').removeAttribute('aria-hidden'); pinMsg.textContent=''; pinAttempts=0; pinLockedUntil=0; }
 
-/* Hash util */
+function licExpired(){
+  const today = new Date(); today.setHours(0,0,0,0);
+  const exp = new Date(LICENSE_EXPIRY+'T00:00:00'); exp.setHours(0,0,0,0);
+  return (today > exp);
+}
+function noTimeTravelViolated(){
+  const now = Date.now();
+  const last = Number(localStorage.getItem(NO_BACK_KEY)||'0');
+  if(last && now + 5*60*1000 < last){ // tolleranza 5 minuti
+    return true;
+  }
+  localStorage.setItem(NO_BACK_KEY, String(now));
+  return false;
+}
 async function sha256B64(str){
   const enc = new TextEncoder();
   const buf = await crypto.subtle.digest('SHA-256', enc.encode(str));
-  let bin=''; const bytes=new Uint8Array(buf);
-  for(let i=0;i<bytes.length;i++) bin+=String.fromCharCode(bytes[i]);
+  let bin=''; new Uint8Array(buf).forEach(b=>bin+=String.fromCharCode(b));
   return btoa(bin);
 }
-
-/* Flow: 1) licenza valida? 2) blocco orologio? 3) PIN */
-function initSecurity(){
-  document.querySelector('.wrap').setAttribute('aria-hidden','true');
-  loadSec();
-
-  // 1) Licenza presente?
-  if(!sec.lic){
-    showLicGate();
-    return;
-  }
-  // 2) Scadenza licenza
-  const now = Date.now();
-  if(now > (sec.lic.expiryMs||0)){
-    showLicExpired();
-    return;
-  }
-  // 3) Anti time-travel
-  if(sec.lastSeenMs && now + TIME_TRAVEL_TOL_MS < sec.lastSeenMs){
-    showTimeTravelBlock();
-    return;
-  }
-  // aggiorna lastSeen
-  sec.lastSeenMs = Math.max(sec.lastSeenMs||0, now);
-  saveSec();
-
-  // 4) Vai a PIN
-  showPinGate();
-}
-
-function showLicGate(){
-  licMsg.textContent='';
-  licGate.style.display='flex';
-  pinGate.style.display='none';
-  document.querySelector('.wrap').setAttribute('aria-hidden','true');
-  licInput.value='';
-  setTimeout(()=>licInput.focus(),50);
-}
-function showLicExpired(){
-  licGate.style.display='flex';
-  document.querySelector('.wrap').setAttribute('aria-hidden','true');
-  licMsg.textContent = '❌ Licenza scaduta. Contatta il fornitore per il rinnovo.';
-  licInput.disabled = false;
-}
-function showTimeTravelBlock(){
-  licGate.style.display='flex';
-  document.querySelector('.wrap').setAttribute('aria-hidden','true');
-  licMsg.textContent = '⛔ Orologio di sistema impostato indietro. Ripristina data/ora corretta.';
-  licInput.disabled = true;
-}
-function activateLicense(){
-  const key = (licInput.value||'').trim();
-  if(!key){ licMsg.textContent='Inserisci una chiave licenza.'; return; }
-  const now = Date.now();
-  sec.lic = { key, activatedMs: now, expiryMs: LICENSE_EXPIRY_MS };
-  sec.lastSeenMs = now;
-  saveSec();
-  licGate.style.display='none';
-  showPinGate();
-}
-
-/* PIN */
-function showPinGate(){
-  pinMsg.textContent='';
-  pinGate.style.display='flex';
-  licGate.style.display='none';
-  pinInput.value='';
-  setTimeout(()=>pinInput.focus(),50);
-}
-function unlockApp(){
-  pinGate.style.display='none';
-  document.querySelector('.wrap').removeAttribute('aria-hidden');
-  resetAutolock();
-}
 pinButtons.forEach(b=>{
-  b.addEventListener('click', ()=>{
-    if(b===pinOk || b===pinClear) return;
-    pinInput.value = (pinInput.value||'') + b.textContent.trim();
-  });
+  if(b.id==='pinOk'||b.id==='pinClear') return;
+  b.addEventListener('click',()=> pinInput.value = (pinInput.value||'') + b.textContent.trim());
 });
-pinClear.addEventListener('click', ()=> pinInput.value='');
-pinOk.addEventListener('click', checkPIN);
-async function checkPIN(){
-  const entered = (pinInput.value||'').trim();
+pinClear.addEventListener('click',()=> pinInput.value='');
+pinOk.addEventListener('click', async ()=>{
+  const now = Date.now();
+  if(now < pinLockedUntil){
+    const left = Math.ceil((pinLockedUntil-now)/1000);
+    pinMsg.textContent = `⏳ Attendi ${left}s`; pinMsg.classList.add('cooldown'); return;
+  }
+  pinMsg.classList.remove('cooldown');
+
+  if(licExpired()){ pinMsg.textContent='🔑 Licenza scaduta. Contatta il fornitore.'; return; }
+  if(noTimeTravelViolated()){ pinMsg.textContent='🛑 Data dispositivo non valida (spostata indietro).'; return; }
+
+  const entered=(pinInput.value||'').trim();
   if(!entered){ pinMsg.textContent='Inserisci il PIN'; return; }
-  if(PIN_MODE==='fixed'){
-    const h = await sha256B64(entered);
-    if(h===PIN_HASH){ unlockApp(); return; }
-    pinMsg.textContent='PIN errato.';
-  }else{
-    // modalità daily: implementabile se serve
-    pinMsg.textContent='Modalità PIN non supportata in questa build.';
-  }
-}
-
-/* Esci licenza */
-licCancel.addEventListener('click', ()=>{ licMsg.textContent=''; licInput.value=''; });
-licOk.addEventListener('click', activateLicense);
-
-/* Protezione continua contro time-travel (salvataggi periodici) */
-document.addEventListener('visibilitychange', ()=>{
-  if(document.visibilityState==='visible'){
-    const now=Date.now();
-    loadSec();
-    if(sec.lic && now > (sec.lic.expiryMs||0)){ showLicExpired(); return; }
-    if(sec.lastSeenMs && now + TIME_TRAVEL_TOL_MS < sec.lastSeenMs){ showTimeTravelBlock(); return; }
-    sec.lastSeenMs = Math.max(sec.lastSeenMs||0, now);
-    saveSec();
+  const h = await sha256B64(entered);
+  if(h===PIN_HASH){ unlockApp(); }
+  else{
+    pinAttempts++;
+    if(pinAttempts>=5){ pinLockedUntil=Date.now()+60*1000; pinMsg.textContent='Troppi tentativi. Attendi 60s.'; pinAttempts=0; }
+    else{ pinMsg.textContent=`PIN errato. Tentativi: ${pinAttempts}/5`; }
+    pinInput.value='';
   }
 });
+/* Avvio bloccato */
+lockApp( licExpired() ? '🔑 Licenza scaduta. Contatta il fornitore.' : '' );
 
-/* ===== Stato rete ===== */
-const netBadge = document.getElementById('netBadge');
-function setNetBadge() {
-  const on = navigator.onLine;
-  netBadge.textContent = on ? 'Online' : 'Offline';
-  netBadge.className = on ? 'online' : 'offline';
-  document.getElementById('inviaPendenti').disabled = !getQueue().length || !on;
+/* ====== IMPOSTAZIONI (localStorage) ====== */
+const settingsEl = document.getElementById('settings');
+document.getElementById('btnGear').onclick=()=>{ settingsEl.style.display = (settingsEl.style.display==='block'?'none':'block'); };
+document.addEventListener('click',(e)=>{
+  if(!settingsEl.contains(e.target) && e.target.id!=='btnGear'){ settingsEl.style.display='none'; }
+});
+const SKEY='py_settings_v1';
+const setConfirm=document.getElementById('setConfirm');
+const setVoice=document.getElementById('setVoice');
+
+function loadSettings(){
+  try{
+    const s = JSON.parse(localStorage.getItem(SKEY)||'{}');
+    setConfirm.checked = s.confirm ?? true;
+    setVoice.checked   = s.voice ?? true;
+  }catch(_){ setConfirm.checked=true; setVoice.checked=true; }
 }
-window.addEventListener('online', setNetBadge);
-window.addEventListener('offline', setNetBadge);
-setNetBadge();
+function saveSettings(){
+  const s = { confirm: !!setConfirm.checked, voice: !!setVoice.checked };
+  localStorage.setItem(SKEY, JSON.stringify(s));
+}
+setConfirm.onchange=saveSettings; setVoice.onchange=saveSettings;
+document.getElementById('resetDefaults').onclick=()=>{
+  setConfirm.checked=true; setVoice.checked=true; saveSettings();
+};
+loadSettings();
 
-/* ===== Voce ===== */
-document.addEventListener('click',()=>{speechSynthesis.getVoices();},{once:true});
+/* ====== CORE APP ====== */
+document.addEventListener('click',()=>{ speechSynthesis.getVoices(); },{once:true});
 
-/* ===== Stato app esistente ===== */
 let expected=null, scanned=null, mode=null, stream, track, confirmBuf=[], lastVal=null;
 let picks=[]; // {ts, codice, qty, commessa, posizione}
-let pendingOK=null;
 let lastScanTs=0;
-let cameraIdleTimer=null;
 
-/* Elementi utili */
-const el=id=>document.getElementById(id);
-const video=el('video'), overlay=el('overlay'), guide=el('guide'), laser=el('laser');
-const badge=el('badge'), resultText=el('resultText'), codes=el('codes');
-const btnTorch=el('torch'), btnZoomIn=el('zoomIn'), btnZoomOut=el('zoomOut');
-const confirm2=el('confirm2'), voice=el('voice'), cameraArea=el('cameraArea'), statusLine=el('statusLine'), flash=el('flash');
-const commessa=el('commessa'), posizione=el('posizione');
-const qtyModal=el('qtyModal'), qtyInput=el('qtyInput'), qtyMinus=el('qtyMinus'), qtyPlus=el('qtyPlus'), qtyOk=el('qtyOk'), qtyCancel=el('qtyCancel'), qtyInfo=el('qtyInfo');
-const scaricaCSV=el('scaricaCSV'), finalizza=el('finalizza');
-const cameraSelect=el('cameraSelect'), inviaPendenti=el('inviaPendenti');
-
-/* Audio + voce */
+/* helpers */
+const $=id=>document.getElementById(id);
+function norm(s){return s?String(s).trim().toUpperCase():s}
+function sanitize(s,max=64){return String(s||'').replace(/[^\w\-\. \/]/g,'').slice(0,max)}
+function vibrate(p){ if(navigator.vibrate) navigator.vibrate(p); }
 let actx;
 function tone(f=880,d=150,t='sine',v=.25){try{if(!actx)actx=new (window.AudioContext||window.webkitAudioContext)();const o=actx.createOscillator(),g=actx.createGain();o.type=t;o.frequency.value=f;g.gain.value=v;o.connect(g);g.connect(actx.destination);o.start();setTimeout(()=>o.stop(),d);}catch(e){}}
 function okSound(){tone(900,120);setTimeout(()=>tone(1200,140),130)}
 function errSound(){tone(250,240,'square',.22);setTimeout(()=>tone(180,250,'square',.20),220)}
-function speak(msg,rate=1,pitch=1,vol=1){if(!voice.checked)return;try{const u=new SpeechSynthesisUtterance(msg);u.lang='it-IT';u.volume=vol;u.rate=rate;u.pitch=pitch;const v=speechSynthesis.getVoices().find(x=>x.lang.startsWith('it'));if(v)u.voice=v;speechSynthesis.cancel();speechSynthesis.speak(u);}catch(e){}}
-function vibrate(p){if(navigator.vibrate)navigator.vibrate(p)}
-function flashScreen(c){flash.style.background=c;flash.style.opacity=.6;setTimeout(()=>flash.style.opacity=0,160)}
-function setBadge(t,cls){badge.textContent=t;badge.className='badge '+(cls==='ok'?'ok':cls==='err'?'err':'')}
-function norm(s){return s?String(s).trim().toUpperCase():s}
-function status(m){statusLine.textContent=m||''}
-function resetConfirm(){confirmBuf=[];lastVal=null;}
-function sanitize(s,max=64){return String(s||'').replace(/[^\w\-\. \/]/g,'').slice(0,max)} // lettere/numeri/underscore/dash/dot/spazio/slash
+function speak(msg,rate=1,pitch=1,vol=1){ if(!setVoice.checked) return; try{const u=new SpeechSynthesisUtterance(msg);u.lang='it-IT';u.volume=vol;u.rate=rate;u.pitch=pitch;const v=speechSynthesis.getVoices().find(x=>x.lang.startsWith('it'));if(v)u.voice=v; speechSynthesis.cancel(); speechSynthesis.speak(u);}catch(e){} }
+function flashScreen(c){ const f=$('flash'); f.style.background=c; f.style.opacity=.6; setTimeout(()=>f.style.opacity=0,160); }
+function status(m){ $('statusLine').textContent = m||''; }
+
+/* Tabs */
+const tabs = Array.from(document.querySelectorAll('.tab'));
+const sections = { commessa:$('tab-commessa'), scanner:$('tab-scanner'), righe:$('tab-righe') };
+tabs.forEach(t=>t.addEventListener('click',()=>{
+  tabs.forEach(x=>x.classList.remove('active')); t.classList.add('active');
+  const k = t.dataset.tab;
+  Object.entries(sections).forEach(([id,el])=> el.classList.toggle('hidden', id!==k));
+}));
 
 /* UI codici */
 function updateUI(){
-  const same = expected && scanned && (norm(expected) === norm(scanned));
+  const codes=$('codes'), badge=$('badge'), result=$('resultText');
+  const same = expected && scanned && (norm(expected)===norm(scanned));
   const stateClass = same ? 'ok' : (expected && scanned ? 'err' : '');
-
-  const box = (label, val, cls) => `
+  const box = (label,val,cls)=>`
     <div class="codeBox ${cls||''}">
       <div class="codeLabel">${label}</div>
-      <div class="codeValue ${cls||''}">${val ? val : '-'}</div>
+      <div class="codeValue ${cls||''}">${val?val:'-'}</div>
     </div>`;
-
-  codes.innerHTML = box('LISTA', expected || '', same ? 'ok' : '') +
-                    box('PEZZO', scanned  || '', stateClass);
-
-  if (expected && scanned){
-    if (same){
-      setBadge('✅ CORRETTO','ok');
-      resultText.innerHTML = 'Match perfetto!';
-      flashScreen('rgba(22,163,74,.5)'); okSound(); speak("Codice corretto",1,1.1,1); vibrate(60);
-      pendingOK = expected;
-      openQtyModal(pendingOK);
-    } else {
-      setBadge('❌ ERRATO','err');
-      resultText.innerHTML = 'Codice diverso!';
-      flashScreen('rgba(220,38,38,.55)'); errSound(); speak("Errore, codice diverso",0.9,0.8,1); vibrate([60,60,180]);
-      pendingOK = null;
+  codes.innerHTML = box('LISTA', expected||'', same?'ok':'') + box('PEZZO', scanned||'', stateClass);
+  if(expected && scanned){
+    if(same){
+      badge.textContent='✅ CORRETTO'; badge.className='badge ok';
+      result.innerHTML='Match perfetto!'; flashScreen('rgba(22,163,74,.5)'); okSound(); speak('Codice corretto',1,1.1,1); vibrate(60);
+      openQtyModal(expected);
+    }else{
+      badge.textContent='❌ ERRATO'; badge.className='badge err';
+      result.innerHTML='Codice diverso!'; flashScreen('rgba(220,38,38,.55)'); errSound(); speak('Errore, codice diverso',0.95,0.9,1); vibrate([60,60,180]);
     }
-  } else {
-    setBadge('Pronto');
-    resultText.innerHTML = 'Scansiona prima la <b>LISTA</b>, poi il <b>PEZZO</b>';
+  }else{
+    badge.textContent='Pronto'; badge.className='badge';
+    result.innerHTML='Scansiona prima la <b>LISTA</b>, poi il <b>PEZZO</b>';
   }
 }
 
-/* Modal quantità */
+/* Quantità (prompt semplice per leggerezza) */
 function openQtyModal(code){
-  qtyInfo.innerHTML = `Codice: <b>${code}</b>`;
-  qtyInput.value = '1';
-  qtyModal.style.display = 'flex';
-  setTimeout(()=>qtyInput.focus(),50);
-}
-function closeQtyModal(){ qtyModal.style.display='none'; }
-qtyMinus.onclick = ()=>{ const v=Math.max(1, parseInt(qtyInput.value||'1',10)-1); qtyInput.value=v; };
-qtyPlus.onclick  = ()=>{ const v=Math.max(1, parseInt(qtyInput.value||'1',10)+1); qtyInput.value=v; };
-qtyCancel.onclick= ()=>{ closeQtyModal(); };
-qtyOk.onclick    = ()=>{
-  const qty = Math.max(1, parseInt(qtyInput.value||'1',10));
-  if(!pendingOK){ closeQtyModal(); return; }
+  const qty = Math.max(1, parseInt(prompt(`Quantità per ${code}`, '1')||'1',10));
   const ts = new Date();
-  picks.push({
-    ts,
-    codice: sanitize(pendingOK,128),
-    qty,
-    commessa: sanitize(commessa.value,64),
-    posizione: sanitize(posizione.value,64)
-  });
+  picks.push({ ts, codice:sanitize(code,128), qty, commessa:sanitize($('commessa').value,64), posizione:sanitize($('posizione').value,64) });
   renderPicks();
-  pendingOK = null;
-  scanned = null;
-  updateUI();
-  closeQtyModal();
-};
+  scanned=null; expected=null; updateUI();
+  // passa automaticamente alla tab RIGHE per conferma
+  document.querySelector('.tab[data-tab="righe"]').click();
+}
 
-/* Tabella righe raccolte */
+/* Righe tabella */
 function renderPicks(){
   const tb = document.querySelector('#righeTbl tbody');
   tb.innerHTML = picks.map(p=>{
-    const hh = p.ts.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+    const hh = p.ts.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
     return `<tr><td>${hh}</td><td>${p.codice}</td><td>${p.qty}</td><td>${p.commessa||'-'}</td><td>${p.posizione||'-'}</td></tr>`;
   }).join('');
-  scaricaCSV.disabled = picks.length===0;
+  $('scaricaCSV').disabled = picks.length===0;
+  $('svuota').disabled = picks.length===0;
 }
 
-/* CSV locale */
+/* CSV */
+function toCSV(){
+  const head='timestamp_ms,iso,codice,quantita,commessa,posizione\n';
+  const body=picks.map(p=>[p.ts.getTime(),p.ts.toISOString(),p.codice,p.qty,p.commessa||'',p.posizione||''].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  return head+body;
+}
 function downloadCSV(){
   if(!picks.length) return;
-  const head = 'timestamp_ms,codice,quantita,commessa,posizione\n';
-  const body = picks.map(p=>{
-    return [p.ts.getTime(),p.codice,p.qty,p.commessa||'',p.posizione||'']
-      .map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',');
-  }).join('\n');
-  const blob = new Blob([head+body], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = `scheda_picking_${(commessa.value||'commessa')}.csv`; a.click();
-  URL.revokeObjectURL(url);
-}
-
-/* ==== Offline Queue (localStorage) ==== */
-const QKEY='poka_queue_v1';
-function getQueue(){ try{ return JSON.parse(localStorage.getItem(QKEY)||'[]'); }catch(_){ return []; } }
-function setQueue(arr){ localStorage.setItem(QKEY, JSON.stringify(arr||[])); }
-async function flushQueue(){
-  const q=getQueue(); if(!q.length || !navigator.onLine) return;
-  while(q.length && navigator.onLine){
-    const chunk = q.splice(0,50);
-    const ok = await postRows(chunk).catch(()=>false);
-    if(!ok){ setQueue(chunk.concat(q)); break; }
-    setQueue(q);
-  }
-  inviaPendenti.disabled = !getQueue().length || !navigator.onLine;
-}
-
-/* Invio batch al Google Sheet */
-async function postRows(rows){
-  const payload = { secret: GS_TOKEN, rows };
-  const r = await fetch(GS_ENDPOINT, {
-    method: 'POST',
-    body: JSON.stringify(payload),
-    redirect: 'follow',
-    cache: 'no-cache',
-    keepalive: true
-  });
-  let data=null;
-  try{ data=await r.json(); }catch(e){
-    const t=await r.text().catch(()=> ''); throw new Error(t||('HTTP '+r.status));
-  }
-  if (!r.ok || !data.ok) throw new Error(data.error || ('HTTP '+r.status));
-  return true;
-}
-
-async function inviaASheetBatch() {
-  if (!picks.length) { alert('Nessuna riga raccolta.'); return; }
-  const rows = picks.map(p => ({
-    timestamp: p.ts.getTime(),
-    codice: p.codice,
-    quantita: p.qty,
-    commessa: p.commessa || sanitize(commessa.value,64),
-    posizione: p.posizione || sanitize(posizione.value,64)
-  }));
-
-  try {
-    if(!navigator.onLine) throw new Error('offline');
-    await postRows(rows);
-    flashScreen('rgba(22,163,74,.45)'); speak("Picking finalizzato e inviato al foglio.",1,1.05,1); vibrate(80);
-    alert(`✅ Inviate ${rows.length} righe al foglio Google.`);
-  } catch (err) {
-    const q = getQueue();
-    setQueue(q.concat(rows));
-    inviaPendenti.disabled = !navigator.onLine ? true : false;
-    flashScreen('rgba(220,38,38,.45)'); speak("Rete assente: dati messi in coda.",0.95,0.95,1); vibrate([80,60,80]);
-    alert('⚠️ Rete assente o errore invio.\nLe righe sono state messe in coda offline e verranno inviate appena la rete torna disponibile.');
-  }
+  const blob=new Blob([toCSV()],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a');
+  a.href=url; a.download=`scheda_picking_${($('commessa').value||'commessa')}.csv`; a.click(); URL.revokeObjectURL(url);
 }
 
 /* Pulsanti base */
-el('scanList').onclick=()=>startScan('list');
-el('scanItem').onclick=()=>startScan('item');
-el('reset').onclick=()=>{expected=null;scanned=null;pendingOK=null;updateUI();};
-scaricaCSV.onclick = downloadCSV;
-finalizza.onclick = async ()=>{
-  if(!picks.length){ alert('Nessuna riga raccolta.'); return; }
-  downloadCSV();
-  await inviaASheetBatch();
-  flushQueue();
-};
-inviaPendenti.onclick=()=>flushQueue();
+$('scanList').onclick=()=>startScan('list');
+$('scanItem').onclick=()=>startScan('item');
+$('reset').onclick = ()=>{ expected=null; scanned=null; updateUI(); };
+$('scaricaCSV').onclick = downloadCSV;
+$('svuota').onclick = ()=>{ if(!picks.length) return; if(!confirm('Sicuro di svuotare la scheda?')) return; picks=[]; renderPicks(); };
 
 /* Camera list */
 async function populateCameras(){
   try{
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    const vids = devices.filter(d=>d.kind==='videoinput');
-    cameraSelect.innerHTML = '<option value="">(automatico)</option>' +
-      vids.map(v=>`<option value="${v.deviceId}">${v.label||'Fotocamera'}</option>`).join('');
+    const devs = await navigator.mediaDevices.enumerateDevices();
+    const vids = devs.filter(d=>d.kind==='videoinput');
+    $('cameraSelect').innerHTML = '<option value="">(automatica)</option>' + vids.map(v=>`<option value="${v.deviceId}">${v.label||'Fotocamera'}</option>`).join('');
   }catch(_){}
 }
 if(navigator.mediaDevices?.enumerateDevices){ populateCameras(); }
 
-/* Avvio scansione: Detector → ZXing */
-async function startScan(which){
-  const cm = sanitize(commessa.value,64), ps = sanitize(posizione.value,64);
-  if(!cm || !ps){
-    alert('Inserisci Numero commessa e Posizione prima di scansionare.');
-    return;
-  }
-  commessa.value = cm; posizione.value = ps;
+/* ===== FULLSCREEN SCAN ===== */
+const fsCam = $('fsCam'), video=$('video'), overlay=$('overlay'), guide=$('guide'), laser=$('laser');
+$('fsClose').onclick = ()=> stopStream();
 
-  mode=which; cameraArea.style.display='block'; resetConfirm(); status('Avvio camera…');
-
-  clearTimeout(cameraIdleTimer);
-  cameraIdleTimer = setTimeout(()=>{ stopStream(); cameraArea.style.display='none'; }, 60_000);
-
-  if('BarcodeDetector' in window){
-    try{ await startDetectorHybrid(); return; }
-    catch(e){ /* fallback */ }
-  }
-  await startZXingHybrid();
+async function enterFullscreen(){
+  fsCam.style.display='block';
+  if (fsCam.requestFullscreen) { try{ await fsCam.requestFullscreen(); }catch(_){/* fallback css already visible */} }
 }
-
-/* Debounce lettura */
+async function exitFullscreen(){
+  if (document.fullscreenElement) { try{ await document.exitFullscreen(); }catch(_){} }
+  fsCam.style.display='none';
+}
+function stopStream(){
+  try{ if(video.srcObject){ video.srcObject.getTracks().forEach(t=>t.stop()); video.srcObject=null; } }catch(_){}
+  exitFullscreen();
+  status('');
+}
 function canAccept(){
   const now = performance.now();
   if(now - lastScanTs < 600) return false;
-  lastScanTs = now;
-  return true;
+  lastScanTs = now; return true;
 }
 
-/* Detector nativo */
-async function startDetectorHybrid(){
-  const constraints={video:{facingMode:"environment",width:{ideal:1280},height:{ideal:720},focusMode:"continuous"}};
-  const chosen = cameraSelect.value;
-  if(chosen) constraints.video.deviceId = { exact: chosen };
+async function startScan(which){
+  const cm=sanitize($('commessa').value,64), ps=sanitize($('posizione').value,64);
+  if(!cm||!ps){ alert('Inserisci Numero commessa e Posizione prima di scansionare.'); return; }
+  $('commessa').value=cm; $('posizione').value=ps;
+  mode=which; await enterFullscreen(); await runDetector();
+}
 
-  stream=await navigator.mediaDevices.getUserMedia(constraints).catch(()=>null);
-  if(!stream){ alert('Fotocamera non disponibile o permesso negato.'); cameraArea.style.display='none'; return; }
-  track=stream.getVideoTracks()[0]; video.srcObject=stream; await video.play(); setupControls(track);
+async function runDetector(){
+  status('Avvio camera…');
+  const c={video:{facingMode:"environment",width:{ideal:1280},height:{ideal:720},focusMode:"continuous"}};
+  const chosen=$('cameraSelect').value; if(chosen) c.video.deviceId={exact:chosen};
+  const stream=await navigator.mediaDevices.getUserMedia(c).catch(()=>null);
+  if(!stream){ alert('Fotocamera non disponibile o permesso negato.'); stopStream(); return; }
+  video.srcObject=stream; await video.play();
 
-  const detector=new BarcodeDetector({formats:['qr_code','code_128','ean_13','ean_8','upc_a','code_39']});
-  const ctx=overlay.getContext('2d');
+  const useNative = ('BarcodeDetector' in window);
+  if(useNative){
+    const detector=new BarcodeDetector({formats:['qr_code','code_128','ean_13','ean_8','upc_a','code_39']});
+    const ctx=overlay.getContext('2d');
 
-  const loop=()=>{
-    if(!stream){return;}
-    if(video.readyState<2){ requestAnimationFrame(loop); return; }
-    overlay.width=video.videoWidth; overlay.height=video.videoHeight; ctx.clearRect(0,0,overlay.width,overlay.height);
-
-    detector.detect(video).then(codes=>{
-      const g=guide.getBoundingClientRect(), v=video.getBoundingClientRect();
-      const gx=g.left-v.left, gy=g.top-v.top, gw=g.width, gh=g.height;
-      const sx=overlay.width/v.width, sy=overlay.height/v.height;
-
-      let accepted=null;
-      for(const c of codes){
-        const r=c.boundingBox; const cx=r.x+r.width/2, cy=r.y+r.height/2;
-        const domX=cx/sx, domY=cy/sy;
-        const inGuide=(domX>=gx&&domX<=gx+gw&&domY>=gy&&domY<=gy+gh);
-        const g2=laser.getBoundingClientRect();
-        const lx=g2.left-v.left+g2.width/2, ly=g2.top-v.top+g2.height/2;
-        const dist=Math.sqrt((domX-lx)**2+(domY-ly)**2);
-        const radius=g2.width/2;
-
-        if(inGuide && dist<radius){ accepted=c.rawValue; break; }
-      }
-
-      if(accepted && canAccept()){
-        if(confirm2.checked){
-          if(lastVal===accepted){ confirmBuf.push(accepted); } else { confirmBuf=[accepted]; lastVal=accepted; }
-          if(confirmBuf.length>=2){ processScan(accepted); return; }
-        } else { processScan(accepted); return; }
-      }
+    const loop=()=>{
+      if(!video.srcObject){ return; }
+      if(video.readyState<2){ requestAnimationFrame(loop); return; }
+      overlay.width=video.videoWidth; overlay.height=video.videoHeight; ctx.clearRect(0,0,overlay.width,overlay.height);
+      detector.detect(video).then(list=>{
+        const g=guide.getBoundingClientRect(), v=video.getBoundingClientRect();
+        const gx=g.left-v.left, gy=g.top-v.top, gw=g.width, gh=g.height;
+        const sx=overlay.width/v.width, sy=overlay.height/v.height;
+        let accepted=null;
+        for(const c of list){
+          const r=c.boundingBox; const cx=r.x+r.width/2, cy=r.y+r.height/2;
+          const domX=cx/sx, domY=cy/sy;
+          const inGuide=(domX>=gx&&domX<=gx+gw&&domY>=gy&&domY<=gy+gh);
+          const g2=laser.getBoundingClientRect();
+          const lx=g2.left-v.left+g2.width/2, ly=g2.top-v.top+g2.height/2;
+          const dist=Math.sqrt((domX-lx)**2+(domY-ly)**2);
+          if(inGuide && dist<g2.width/2){ accepted=c.rawValue; break; }
+        }
+        if(accepted && canAccept()){
+          if(setConfirm.checked){
+            if(lastVal===accepted) confirmBuf.push(accepted); else { confirmBuf=[accepted]; lastVal=accepted; }
+            if(confirmBuf.length>=2){ onScan(accepted); return; }
+          }else{ onScan(accepted); return; }
+        }
+        requestAnimationFrame(loop);
+      }).catch(()=>requestAnimationFrame(loop));
+    };
+    loop();
+  }else{
+    // ZXing fallback
+    const hints=new Map();
+    hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,[ZXing.BarcodeFormat.QR_CODE,ZXing.BarcodeFormat.CODE_128,ZXing.BarcodeFormat.EAN_13,ZXing.BarcodeFormat.UPC_A,ZXing.BarcodeFormat.CODE_39]);
+    const reader=new ZXing.BrowserMultiFormatReader(hints);
+    const loop=async()=>{
+      try{
+        const res=await reader.decodeFromVideoElement(video);
+        if(res && canAccept()){ onScan(res.text); return; }
+      }catch(_){}
       requestAnimationFrame(loop);
-    }).catch(()=>requestAnimationFrame(loop));
-  };
-  loop();
+    };
+    loop();
+  }
 }
 
-/* ZXing fallback */
-async function startZXingHybrid(){
-  const constraints={video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}};
-  const chosen = cameraSelect.value;
-  if(chosen) constraints.video.deviceId = { exact: chosen };
-
-  const s=await navigator.mediaDevices.getUserMedia(constraints).catch(()=>null);
-  if(!s){ alert('Fotocamera non disponibile o permesso negato.'); cameraArea.style.display='none'; return; }
-  stream=s; track=stream.getVideoTracks()[0]; setupControls(track);
-
-  const vid=document.createElement('video');
-  vid.setAttribute('playsinline',''); vid.muted=true; vid.autoplay=true; vid.srcObject=stream;
-  document.body.appendChild(vid);
-
-  const formats=[ZXing.BarcodeFormat.QR_CODE,ZXing.BarcodeFormat.CODE_128,ZXing.BarcodeFormat.EAN_13,ZXing.BarcodeFormat.UPC_A,ZXing.BarcodeFormat.CODE_39];
-  const hints=new Map(); hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,formats);
-  const reader=new ZXing.BrowserMultiFormatReader(hints);
-
-  await vid.play(); status('Inquadra il codice nel cerchio rosso…');
-
-  const loop=async()=>{
-    try{
-      const res=await reader.decodeFromVideoElement(vid);
-      if(res && canAccept()){ if(pointInGuideZXing(res,vid)){ processScan(res.text); return; } }
-    }catch(e){}
-    requestAnimationFrame(loop);
-  };
-  loop();
+function onScan(text){
+  const val=sanitize(text,128);
+  if(mode==='list') expected=val; else scanned=val;
+  stopStream();
+  // Torna alla tab Scanner per feedback, poi UI decide
+  document.querySelector('.tab[data-tab="scanner"]').click();
+  updateUI();
 }
 
-/* ROI ZXing */
-function pointInGuideZXing(result,vidEl){
-  try{
-    const pts=result.resultPoints||[]; if(pts.length===0) return true;
-    let cx=0,cy=0; for(const p of pts){ cx+=p.x; cy+=p.y; } cx/=pts.length; cy/=pts.length;
-
-    const vrect=vidEl.getBoundingClientRect();
-    const vw=vidEl.videoWidth, vh=vidEl.videoHeight;
-    const scale=Math.min(vrect.width/vw, vrect.height/vh);
-    const dispW=vw*scale, dispH=vh*scale;
-    const offX=(vrect.width-dispW)/2, offY=(vrect.height-dispH)/2;
-
-    const domX=offX+cx*scale, domY=offY+cy*scale;
-    const g2=laser.getBoundingClientRect();
-    const lx=g2.left-vrect.left+g2.width/2, ly=g2.top-vrect.top+g2.height/2;
-    const dist=Math.sqrt((domX-lx)**2+(domY-ly)**2);
-    return (dist < g2.width/2);
-  }catch(e){ return true; }
-}
-
-/* Gestione lettura */
-function processScan(text){
-  const val = sanitize(text,128);
-  if(mode==='list') expected = val; else scanned = val;
-  stopStream(); cameraArea.style.display='none'; updateUI();
-}
-
-/* Stop camera */
-function stopStream(){
-  try{
-    if(video.srcObject){ video.srcObject.getTracks().forEach(t=>t.stop()); video.srcObject=null; }
-    if(track) track.stop();
-  }catch(e){}
-  status('');
-  clearTimeout(cameraIdleTimer); cameraIdleTimer=null;
-}
-
-/* LED / Zoom */
-function setupControls(track){
-  btnTorch.disabled=true;
-  try{
-    const caps=track.getCapabilities?.()||{};
-    if('torch' in caps){
-      btnTorch.disabled=false; let on=false;
-      btnTorch.onclick=async()=>{
-        on=!on;
-        try{ await track.applyConstraints({advanced:[{torch:on}]}); status(on?'LED: ON':'LED: OFF'); }
-        catch(e){ status('LED non disponibile'); on=false; }
-      };
-    }
-  }catch(e){}
-
-  btnZoomIn.disabled=true; btnZoomOut.disabled=true;
-  try{
-    const caps=track.getCapabilities?.()||{};
-    if(caps.zoom){
-      let z=track.getSettings().zoom||1, step=caps.zoom.step||0.25;
-      const min=caps.zoom.min||1, max=caps.zoom.max||z||1;
-      btnZoomIn.disabled=false; btnZoomOut.disabled=false;
-      btnZoomIn.onclick=()=>applyZoom(Math.min(max,(z||1)+step));
-      btnZoomOut.onclick=()=>applyZoom(Math.max(min,(z||1)-step));
-      async function applyZoom(nv){
-        try{ await track.applyConstraints({advanced:[{zoom:nv}]}); z=nv; status('Zoom: '+nv.toFixed(2)); }
-        catch(e){}
-      }
-    }
-  }catch(e){}
-}
-
-/* Avvio UI + Sicurezza */
+/* ===== INIT ===== */
 updateUI();
-window.addEventListener('online', ()=>flushQueue());
-
-// avvia flusso di sicurezza
-initSecurity();
 </script>
 </body>
 </html>
+```0
