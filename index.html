@@ -102,6 +102,7 @@
   #toast.ok{background:rgba(34,197,94,.15);border-color:#14532d;color:#86efac}
   #toast.err{background:rgba(239,68,68,.15);border-color:#7f1d1d;color:#fecaca}
 
+  /* Small text */
   .muted{color:var(--muted)}
 </style>
 </head>
@@ -110,17 +111,17 @@
 <div class="app">
   <header>
     <div class="topbar">
-      <div class="brand">Poka-Yoke PRO • Scanner IBRIDO</div>
+      <div class="brand" data-i18n="brand">Poka-Yoke PRO • Scanner IBRIDO</div>
       <span id="netBadge" class="offline">Offline</span>
     </div>
   </header>
 
   <!-- Tabs -->
   <div class="tabs">
-    <button class="tab active" data-tab="commessa">Commessa</button>
-    <button class="tab" data-tab="scanner">Scanner</button>
-    <button class="tab" data-tab="righe">Righe raccolte</button>
-    <button class="tab" data-tab="impostazioni">Impostazioni</button>
+    <button class="tab active" data-tab="commessa" data-i18n="tab_commessa">Commessa</button>
+    <button class="tab" data-tab="scanner" data-i18n="tab_scanner">Scanner</button>
+    <button class="tab" data-tab="righe" data-i18n="tab_righe">Righe raccolte</button>
+    <button class="tab" data-tab="impostazioni" data-i18n="tab_impostazioni">Impostazioni</button>
   </div>
 
   <main>
@@ -129,25 +130,25 @@
       <div class="panel">
         <div class="row">
           <label class="field">
-            <span>Numero commessa</span>
+            <span data-i18n="lbl_commessa">Numero commessa</span>
             <input id="commessaInput" class="input" placeholder="Es. 024830" autocomplete="off"/>
           </label>
           <label class="field">
-            <span>Posizione</span>
+            <span data-i18n="lbl_posizione">Posizione</span>
             <input id="posizioneInput" class="input" placeholder="Es. POS 0020" autocomplete="off"/>
           </label>
           <label class="field" style="min-width:200px;flex:1 1 260px">
-            <span>Fotocamera</span>
+            <span data-i18n="lbl_camera">Fotocamera</span>
             <select id="cameraSelect" class="input">
-              <option value="">(automatica)</option>
+              <option value="" data-i18n="opt_camera_auto">(automatica)</option>
             </select>
           </label>
         </div>
         <div class="row" style="margin-top:10px">
-          <button id="goScanner" class="btn btn-primary">Vai allo Scanner</button>
+          <button id="goScanner" class="btn btn-primary" data-i18n="btn_go_scanner">Vai allo Scanner</button>
         </div>
       </div>
-      <div class="panel muted">Suggerimento: compila commessa e posizione una volta sola; resteranno salvate sul dispositivo.</div>
+      <div class="panel muted" data-i18n="hint_commessa">Suggerimento: compila commessa e posizione una volta sola; resteranno salvate sul dispositivo.</div>
     </section>
 
     <!-- SCANNER -->
@@ -156,14 +157,14 @@
         <div id="badge" class="badge">Pronto</div>
         <div id="resultText">Scansiona prima la <b>LISTA</b>, poi il <b>PEZZO</b></div>
         <div id="codes"></div>
-        <div class="muted">Allinea il codice nel <b>quadrato</b> e centra nel cerchio rosso 🔴.</div>
+        <div class="muted" data-i18n="hint_scanner">Allinea il codice nel <b>quadrato</b> e centra nel cerchio rosso 🔴.</div>
       </div>
 
       <div class="panel">
         <div class="row">
-          <button id="scanList" class="btn btn-primary">📋 LISTA (fullscreen)</button>
-          <button id="scanItem" class="btn btn-primary">📦 PEZZO (fullscreen)</button>
-          <button id="reset" class="btn btn-outline">🔄 Reset</button>
+          <button id="scanList" class="btn btn-primary" data-i18n="btn_scan_list">📋 LISTA (fullscreen)</button>
+          <button id="scanItem" class="btn btn-primary" data-i18n="btn_scan_item">📦 PEZZO (fullscreen)</button>
+          <button id="reset" class="btn btn-outline" data-i18n="btn_reset">🔄 Reset</button>
         </div>
       </div>
     </section>
@@ -172,15 +173,26 @@
     <section id="righe" class="view">
       <div class="panel">
         <div class="row" style="justify-content:space-between">
-          <div style="font-weight:800">Righe raccolte <span class="countPill" id="countPill">0</span></div>
+          <div style="font-weight:800">
+            <span data-i18n="title_righe">Righe raccolte</span>
+            <span class="countPill" id="countPill">0</span>
+          </div>
           <div class="row" style="gap:8px">
-            <button id="scaricaCSV" class="btn btn-outline" disabled>⬇️ Scarica CSV</button>
-            <button id="svuota" class="btn btn-outline" disabled>🗑️ Svuota</button>
+            <button id="scaricaCSV" class="btn btn-outline" disabled data-i18n="btn_csv">⬇️ Scarica CSV</button>
+            <button id="svuota" class="btn btn-outline" disabled data-i18n="btn_clear">🗑️ Svuota</button>
           </div>
         </div>
         <div id="righeBox" style="margin-top:10px">
           <table>
-            <thead><tr><th>Ora</th><th>Codice</th><th>Q.tà</th><th>Commessa</th><th>Posizione</th></tr></thead>
+            <thead>
+              <tr>
+                <th data-i18n="col_ora">Ora</th>
+                <th data-i18n="col_codice">Codice</th>
+                <th data-i18n="col_qty">Q.tà</th>
+                <th data-i18n="col_commessa">Commessa</th>
+                <th data-i18n="col_posizione">Posizione</th>
+              </tr>
+            </thead>
             <tbody id="righeBody"></tbody>
           </table>
         </div>
@@ -190,32 +202,42 @@
     <!-- IMPOSTAZIONI -->
     <section id="impostazioni" class="view">
       <div class="panel">
-        <div style="font-weight:800;margin-bottom:8px">Impostazioni</div>
+        <div style="font-weight:800;margin-bottom:8px" data-i18n="title_settings">Impostazioni</div>
         <div class="row">
           <label class="field" style="flex:0 0 260px">
-            <span>Conferma doppia</span>
+            <span data-i18n="lbl_confirm">Conferma doppia</span>
             <select id="optConfirm" class="input">
-              <option value="on" selected>Attiva (più sicuro)</option>
-              <option value="off">Disattiva (più veloce)</option>
+              <option value="on" selected data-i18n="opt_confirm_on">Attiva (più sicuro)</option>
+              <option value="off" data-i18n="opt_confirm_off">Disattiva (più veloce)</option>
             </select>
           </label>
           <label class="field" style="flex:0 0 260px">
-            <span>Annuncio vocale</span>
+            <span data-i18n="lbl_voice">Annuncio vocale</span>
             <select id="optVoice" class="input">
-              <option value="on" selected>Attivo</option>
-              <option value="off">Disattivo</option>
+              <option value="on" selected data-i18n="opt_voice_on">Attivo</option>
+              <option value="off" data-i18n="opt_voice_off">Disattivo</option>
             </select>
           </label>
           <label class="field" style="flex:0 0 260px">
-            <span>Vibrazione</span>
+            <span data-i18n="lbl_vibrate">Vibrazione</span>
             <select id="optVibrate" class="input">
-              <option value="on" selected>Attiva</option>
-              <option value="off">Disattiva</option>
+              <option value="on" selected data-i18n="opt_vibrate_on">Attiva</option>
+              <option value="off" data-i18n="opt_vibrate_off">Disattiva</option>
+            </select>
+          </label>
+
+          <label class="field" style="flex:0 0 260px">
+            <span data-i18n="lbl_lang">Lingua</span>
+            <select id="optLang" class="input">
+              <option value="pt-BR">🇧🇷 Português (BR)</option>
+              <option value="it-IT">🇮🇹 Italiano</option>
+              <option value="en-US">🇬🇧 English</option>
+              <option value="ur-PK">🇵🇰 اردو (Urdu)</option>
             </select>
           </label>
         </div>
       </div>
-      <div class="panel muted">Versione UI: 1.0 • Solo locale (nessun invio in rete). Aggiungi alla Home per esperienza tipo app.</div>
+      <div class="panel muted" data-i18n="footer_ui">Versione UI: 1.0 • Solo locale (nessun invio in rete). Aggiungi alla Home per esperienza tipo app.</div>
     </section>
   </main>
 </div>
@@ -223,8 +245,8 @@
 <!-- Fullscreen Camera -->
 <div id="camFS">
   <div class="camTop">
-    <button id="camClose" class="camBtn">✕ Chiudi</button>
-    <div id="camHint" class="camBtn" style="pointer-events:none">Inquadra e centra nel cerchio</div>
+    <button id="camClose" class="camBtn" data-i18n="btn_cam_close">✕ Chiudi</button>
+    <div id="camHint" class="camBtn" style="pointer-events:none" data-i18n="cam_hint">Inquadra e centra nel cerchio</div>
   </div>
   <div class="camWrap">
     <video id="video" muted playsinline></video>
@@ -237,16 +259,16 @@
 <!-- Modale quantità -->
 <div id="qtyModal">
   <div class="modalCard">
-    <div class="modalTitle">Inserisci quantità prelevata</div>
+    <div class="modalTitle" data-i18n="qty_title">Inserisci quantità prelevata</div>
     <div id="qtyInfo" class="muted" style="margin-bottom:6px"></div>
     <div class="qtyRow">
       <button id="qtyMinus" class="qtyBtn">−</button>
-      <input id="qtyInput" class="qtyInput" type="number" min="1" step="1" placeholder="Inserisci quantità"/>
+      <input id="qtyInput" class="qtyInput" type="number" min="1" step="1" />
       <button id="qtyPlus" class="qtyBtn">+</button>
     </div>
     <div class="modalActions">
-      <button id="qtyCancel" class="btn btn-outline">Annulla</button>
-      <button id="qtyOk" class="btn btn-ok">Conferma</button>
+      <button id="qtyCancel" class="btn btn-outline" data-i18n="btn_cancel">Annulla</button>
+      <button id="qtyOk" class="btn btn-ok" data-i18n="btn_confirm">Conferma</button>
     </div>
   </div>
 </div>
@@ -255,6 +277,297 @@
 <div id="toast"></div>
 
 <script>
+/* ===================== MESSAGGI (i18n) ===================== */
+const messages = {
+  "it-IT": {
+    brand: "Poka-Yoke PRO • Scanner IBRIDO",
+    tab_commessa: "Commessa",
+    tab_scanner: "Scanner",
+    tab_righe: "Righe raccolte",
+    tab_impostazioni: "Impostazioni",
+
+    lbl_commessa: "Numero commessa",
+    lbl_posizione: "Posizione",
+    lbl_camera: "Fotocamera",
+    opt_camera_auto: "(automatica)",
+    btn_go_scanner: "Vai allo Scanner",
+    hint_commessa: "Suggerimento: compila commessa e posizione una volta sola; resteranno salvate sul dispositivo.",
+
+    hint_scanner: "Allinea il codice nel <b>quadrato</b> e centra nel cerchio rosso 🔴.",
+    btn_scan_list: "📋 LISTA (fullscreen)",
+    btn_scan_item: "📦 PEZZO (fullscreen)",
+    btn_reset: "🔄 Reset",
+    status_ready: "Pronto",
+    status_match_ok: "Match perfetto!",
+    status_match_err: "Codice diverso!",
+
+    title_righe: "Righe raccolte",
+    btn_csv: "⬇️ Scarica CSV",
+    btn_clear: "🗑️ Svuota",
+    col_ora: "Ora",
+    col_codice: "Codice",
+    col_qty: "Q.tà",
+    col_commessa: "Commessa",
+    col_posizione: "Posizione",
+
+    title_settings: "Impostazioni",
+    lbl_confirm: "Conferma doppia",
+    opt_confirm_on: "Attiva (più sicuro)",
+    opt_confirm_off: "Disattiva (più veloce)",
+    lbl_voice: "Annuncio vocale",
+    opt_voice_on: "Attivo",
+    opt_voice_off: "Disattivo",
+    lbl_vibrate: "Vibrazione",
+    opt_vibrate_on: "Attiva",
+    opt_vibrate_off: "Disattiva",
+    lbl_lang: "Lingua",
+    footer_ui: "Versione UI: 1.0 • Solo locale (nessun invio in rete). Aggiungi alla Home per esperienza tipo app.",
+
+    cam_hint: "Inquadra e centra nel cerchio",
+    btn_cam_close: "✕ Chiudi",
+
+    qty_title: "Inserisci quantità prelevata",
+    btn_cancel: "Annulla",
+    btn_confirm: "Conferma",
+    toast_added: "Riga aggiunta",
+    alert_fill_first: "Inserisci Numero commessa e Posizione prima di scansionare.",
+    confirm_clear: "Sicuro di svuotare la sessione corrente?",
+    csv_name: "scheda_picking_",
+    voice_ok: "Codice corretto",
+    voice_err: "Errore, codice diverso"
+  },
+
+  "pt-BR": {
+    brand: "Poka-Yoke PRO • Leitor HÍBRIDO",
+    tab_commessa: "Ordem",
+    tab_scanner: "Scanner",
+    tab_righe: "Linhas coletadas",
+    tab_impostazioni: "Configurações",
+
+    lbl_commessa: "Número da ordem",
+    lbl_posizione: "Posição",
+    lbl_camera: "Câmera",
+    opt_camera_auto: "(automática)",
+    btn_go_scanner: "Ir para o Scanner",
+    hint_commessa: "Dica: preencha ordem e posição uma única vez; ficarão salvos no dispositivo.",
+
+    hint_scanner: "Alinhe o código no <b>quadrado</b> e centralize no círculo vermelho 🔴.",
+    btn_scan_list: "📋 LISTA (tela cheia)",
+    btn_scan_item: "📦 PEÇA (tela cheia)",
+    btn_reset: "🔄 Resetar",
+    status_ready: "Pronto",
+    status_match_ok: "Match perfeito!",
+    status_match_err: "Código diferente!",
+
+    title_righe: "Linhas coletadas",
+    btn_csv: "⬇️ Baixar CSV",
+    btn_clear: "🗑️ Limpar",
+    col_ora: "Hora",
+    col_codice: "Código",
+    col_qty: "Qtd.",
+    col_commessa: "Ordem",
+    col_posizione: "Posição",
+
+    title_settings: "Configurações",
+    lbl_confirm: "Confirmação dupla",
+    opt_confirm_on: "Ativa (mais seguro)",
+    opt_confirm_off: "Desativa (mais rápido)",
+    lbl_voice: "Anúncio por voz",
+    opt_voice_on: "Ativo",
+    opt_voice_off: "Inativo",
+    lbl_vibrate: "Vibração",
+    opt_vibrate_on: "Ativa",
+    opt_vibrate_off: "Desativa",
+    lbl_lang: "Idioma",
+    footer_ui: "Versão UI: 1.0 • Somente local (sem envio pela internet). Adicione à Tela inicial para experiência tipo app.",
+
+    cam_hint: "Aponte e centralize no círculo",
+    btn_cam_close: "✕ Fechar",
+
+    qty_title: "Informe a quantidade coletada",
+    btn_cancel: "Cancelar",
+    btn_confirm: "Confirmar",
+    toast_added: "Linha adicionada",
+    alert_fill_first: "Informe Ordem e Posição antes de escanear.",
+    confirm_clear: "Tem certeza que deseja limpar a sessão atual?",
+    csv_name: "ficha_coleta_",
+    voice_ok: "Código correto",
+    voice_err: "Erro, código diferente"
+  },
+
+  "en-US": {
+    brand: "Poka-Yoke PRO • HYBRID Scanner",
+    tab_commessa: "Job",
+    tab_scanner: "Scanner",
+    tab_righe: "Collected lines",
+    tab_impostazioni: "Settings",
+
+    lbl_commessa: "Job number",
+    lbl_posizione: "Position",
+    lbl_camera: "Camera",
+    opt_camera_auto: "(automatic)",
+    btn_go_scanner: "Go to Scanner",
+    hint_commessa: "Tip: fill job and position once; they will remain saved on this device.",
+
+    hint_scanner: "Align the code in the <b>square</b> and center it in the red circle 🔴.",
+    btn_scan_list: "📋 LIST (fullscreen)",
+    btn_scan_item: "📦 ITEM (fullscreen)",
+    btn_reset: "🔄 Reset",
+    status_ready: "Ready",
+    status_match_ok: "Perfect match!",
+    status_match_err: "Different code!",
+
+    title_righe: "Collected lines",
+    btn_csv: "⬇️ Download CSV",
+    btn_clear: "🗑️ Clear",
+    col_ora: "Time",
+    col_codice: "Code",
+    col_qty: "Qty",
+    col_commessa: "Job",
+    col_posizione: "Position",
+
+    title_settings: "Settings",
+    lbl_confirm: "Double confirmation",
+    opt_confirm_on: "On (safer)",
+    opt_confirm_off: "Off (faster)",
+    lbl_voice: "Voice announcement",
+    opt_voice_on: "On",
+    opt_voice_off: "Off",
+    lbl_vibrate: "Vibration",
+    opt_vibrate_on: "On",
+    opt_vibrate_off: "Off",
+    lbl_lang: "Language",
+    footer_ui: "UI Version: 1.0 • Local only (no network sends). Add to Home for app-like experience.",
+
+    cam_hint: "Point and center in the circle",
+    btn_cam_close: "✕ Close",
+
+    qty_title: "Enter picked quantity",
+    btn_cancel: "Cancel",
+    btn_confirm: "Confirm",
+    toast_added: "Line added",
+    alert_fill_first: "Enter Job and Position before scanning.",
+    confirm_clear: "Are you sure you want to clear the current session?",
+    csv_name: "picking_sheet_",
+    voice_ok: "Correct code",
+    voice_err: "Error, different code"
+  },
+
+  "ur-PK": {
+    brand: "پوکا-یوک پرو • ہائبرڈ اسکینر",
+    tab_commessa: "آرڈر",
+    tab_scanner: "اسکینر",
+    tab_righe: "جمع شدہ قطاریں",
+    tab_impostazioni: "سیٹنگز",
+
+    lbl_commessa: "آرڈر نمبر",
+    lbl_posizione: "پوزیشن",
+    lbl_camera: "کیمرہ",
+    opt_camera_auto: "(خودکار)",
+    btn_go_scanner: "اسکینر پر جائیں",
+    hint_commessa: "مشورہ: آرڈر اور پوزیشن ایک بار درج کریں؛ یہ اسی ڈیوائس پر محفوظ رہیں گے۔",
+
+    hint_scanner: "کوڈ کو <b>چوکور</b> خانے میں لائیں اور سرخ دائرے 🔴 کے درمیان رکھیں۔",
+    btn_scan_list: "📋 لسٹ (فل اسکرین)",
+    btn_scan_item: "📦 آئٹم (فل اسکرین)",
+    btn_reset: "🔄 ری سیٹ",
+    status_ready: "تیار",
+    status_match_ok: "کمال مطابقت!",
+    status_match_err: "کوڈ مختلف ہے!",
+
+    title_righe: "جمع شدہ قطاریں",
+    btn_csv: "⬇️ CSV ڈاؤن لوڈ",
+    btn_clear: "🗑️ صاف کریں",
+    col_ora: "وقت",
+    col_codice: "کوڈ",
+    col_qty: "مقدار",
+    col_commessa: "آرڈر",
+    col_posizione: "پوزیشن",
+
+    title_settings: "سیٹنگز",
+    lbl_confirm: "ڈبل تصدیق",
+    opt_confirm_on: "آن (زیادہ محفوظ)",
+    opt_confirm_off: "آف (تیز)",
+    lbl_voice: "آواز سے اعلان",
+    opt_voice_on: "آن",
+    opt_voice_off: "آف",
+    lbl_vibrate: "وائبریشن",
+    opt_vibrate_on: "آن",
+    opt_vibrate_off: "آف",
+    lbl_lang: "زبان",
+    footer_ui: "UI ورژن: 1.0 • صرف مقامی (نیٹ ورک پر نہیں بھیجتا)۔ ایپ جیسا تجربہ حاصل کرنے کے لیے ہوم اسکرین میں شامل کریں۔",
+
+    cam_hint: "نشانے پر رکھیں اور دائرے کے بیچ میں لائیں",
+    btn_cam_close: "✕ بند کریں",
+
+    qty_title: "حاصل شدہ مقدار درج کریں",
+    btn_cancel: "منسوخ",
+    btn_confirm: "تصدیق",
+    toast_added: "قطار شامل ہوگئی",
+    alert_fill_first: "اسکیننگ سے پہلے آرڈر اور پوزیشن درج کریں۔",
+    confirm_clear: "کیا آپ واقعی موجودہ سیشن صاف کرنا چاہتے ہیں؟",
+    csv_name: "پکنگ_شیٹ_",
+    voice_ok: "صحیح کوڈ",
+    voice_err: "غلطی، مختلف کوڈ"
+  }
+};
+
+/* ===== Lingua: stato e applicazione ===== */
+const LSKEY_LANG = 'poka_lang_v1';
+function detectInitialLang(){
+  const saved = localStorage.getItem(LSKEY_LANG);
+  if(saved) return saved;
+  const nav = navigator.language || 'it-IT';
+  if(nav.startsWith('pt')) return 'pt-BR';
+  if(nav.startsWith('it')) return 'it-IT';
+  if(nav.startsWith('en')) return 'en-US';
+  if(nav.startsWith('ur')) return 'ur-PK';
+  return 'it-IT';
+}
+let currentLang = detectInitialLang();
+localStorage.setItem(LSKEY_LANG, currentLang);
+
+function applyLang(lang){
+  currentLang = lang;
+  localStorage.setItem(LSKEY_LANG, lang);
+  // UI testi
+  const dict = messages[lang] || messages['it-IT'];
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const key = el.getAttribute('data-i18n');
+    const txt = dict[key];
+    if(typeof txt === 'string'){
+      if(el.tagName === 'INPUT' || el.tagName === 'SELECT' || el.tagName === 'TEXTAREA'){
+        // per placeholder dentro input: usiamo chiavi specifiche quando servono
+        if(el.hasAttribute('placeholder-i18n')){
+          el.setAttribute('placeholder', dict[ el.getAttribute('placeholder-i18n') ] || el.getAttribute('placeholder'));
+        } else {
+          // per option statica: nulla
+        }
+      } else {
+        el.innerHTML = txt;
+      }
+    }
+  });
+  // Placeholders degli input commessa/posizione
+  const dict2 = messages[lang] || messages['it-IT'];
+  document.getElementById('commessaInput').placeholder =
+    (lang==='en-US' ? 'e.g. 024830' :
+     lang==='pt-BR' ? 'Ex.: 024830' :
+     lang==='ur-PK' ? 'مثلاً 024830' : 'Es. 024830');
+
+  document.getElementById('posizioneInput').placeholder =
+    (lang==='en-US' ? 'e.g. POS 0020' :
+     lang==='pt-BR' ? 'Ex.: POS 0020' :
+     lang==='ur-PK' ? 'مثلاً POS 0020' : 'Es. POS 0020');
+
+  // badge pronto + testo guida
+  setReadyState();
+}
+function t(key){
+  const d = messages[currentLang] || messages['it-IT'];
+  return d[key] || key;
+}
+
 /* ===== Stato rete (solo badge) ===== */
 const netBadge = document.getElementById('netBadge');
 function setNetBadge(){
@@ -283,7 +596,7 @@ tabs.forEach(t=> t.addEventListener('click', ()=> activateTab(t.dataset.tab)));
 $('goScanner').addEventListener('click', ()=> activateTab('scanner'));
 
 /* ===== Stato app ===== */
-let expected=null, scanned=null, currentMode=null;
+let expected=null, scanned=null, mode=null;
 let picks=[]; // {ts, codice, qty, commessa, posizione}
 let pendingOK=null;
 let confirmBuf=[], lastVal=null;
@@ -292,9 +605,11 @@ let lastScanTs=0;
 /* ===== Impostazioni (localStorage) ===== */
 const LSKEY_SETTINGS='poka_settings_v1';
 const LSKEY_SESSION='poka_session_v1';
-const LSKEY_PICKS='poka_picks_v1';
-const settings = { confirm:true, voice:true, vibrate:true };
-
+const settings = {
+  confirm:true,
+  voice:true,
+  vibrate:true
+};
 function loadSettings(){
   try{
     const s = JSON.parse(localStorage.getItem(LSKEY_SETTINGS)||'{}');
@@ -303,6 +618,7 @@ function loadSettings(){
   $('optConfirm').value = settings.confirm ? 'on':'off';
   $('optVoice').value = settings.voice ? 'on':'off';
   $('optVibrate').value = settings.vibrate ? 'on':'off';
+  $('optLang').value = currentLang;
 }
 function saveSettings(){
   localStorage.setItem(LSKEY_SETTINGS, JSON.stringify(settings));
@@ -310,6 +626,12 @@ function saveSettings(){
 $('optConfirm').addEventListener('change', e=>{ settings.confirm = (e.target.value==='on'); saveSettings(); });
 $('optVoice').addEventListener('change', e=>{ settings.voice = (e.target.value==='on'); saveSettings(); });
 $('optVibrate').addEventListener('change', e=>{ settings.vibrate = (e.target.value==='on'); saveSettings(); });
+$('optLang').addEventListener('change', e=>{
+  const lang = e.target.value;
+  applyLang(lang);
+  // Aggiorna select per coerenza
+  $('optLang').value = lang;
+});
 
 /* ===== Commessa / posizione (persist) ===== */
 function sanitize(s,max=64){return String(s||'').replace(/[^\w\-\. \/]/g,'').slice(0,max)}
@@ -327,15 +649,30 @@ function saveSessionFields(){
   };
   localStorage.setItem(LSKEY_SESSION, JSON.stringify(data));
 }
-$('commessaInput').addEventListener('input', saveSessionFields);
-$('posizioneInput').addEventListener('input', saveSessionFields);
+$('commessaInput').addEventListener('change', saveSessionFields);
+$('posizioneInput').addEventListener('change', saveSessionFields);
 
 /* ===== Audio/voce/vibrazione ===== */
 let actx;
 function tone(f=880,d=120,t='sine',v=.25){try{if(!actx)actx=new (window.AudioContext||window.webkitAudioContext)();const o=actx.createOscillator(),g=actx.createGain();o.type=t;o.frequency.value=f;g.gain.value=v;o.connect(g);g.connect(actx.destination);o.start();setTimeout(()=>o.stop(),d);}catch(e){}}
 function okSound(){tone(900,120);setTimeout(()=>tone(1200,140),130)}
 function errSound(){tone(250,220,'square',.22);setTimeout(()=>tone(180,230,'square',.20),200)}
-function speak(msg){ if(!settings.voice) return; try{ const u=new SpeechSynthesisUtterance(msg); u.lang='it-IT'; speechSynthesis.cancel(); speechSynthesis.speak(u);}catch(e){} }
+function ttsLang(){
+  // mappa TTS per lingua selezionata
+  return currentLang || 'it-IT';
+}
+function speak(msg){
+  if(!settings.voice) return;
+  try{
+    const u=new SpeechSynthesisUtterance(msg);
+    u.lang = ttsLang();
+    speechSynthesis.cancel();
+    // prova a scegliere una voce della stessa lingua, se disponibile
+    const v = speechSynthesis.getVoices().find(x=> (x.lang||'').toLowerCase().startsWith(u.lang.toLowerCase()));
+    if(v) u.voice = v;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
 function vibrate(p){ if(settings.vibrate && navigator.vibrate) navigator.vibrate(p) }
 
 /* ===== UI scanner ===== */
@@ -347,27 +684,34 @@ function box(label,val,cls){
     <div class="codeValue ${cls||''}">${val?val:'-'}</div>
   </div>`;
 }
+function setReadyState(){
+  badge.textContent = t('status_ready');
+  badge.className='badge';
+  resultText.innerHTML = t('hint_scanner');
+}
 function updateUI(){
   const same = expected && scanned && (norm(expected)===norm(scanned));
   const stateClass = same ? 'ok' : (expected && scanned ? 'err' : '');
-  codesEl.innerHTML = box('LISTA', expected||'', same?'ok':'') + box('PEZZO', scanned||'', stateClass);
+  // etichette LISTA/PEZZO tengono le parole locali
+  const lblList = t('btn_scan_list').split('(')[0].trim(); // "📋 LISTA"
+  const lblItem = t('btn_scan_item').split('(')[0].trim(); // "📦 PEZZO"
+  codesEl.innerHTML = box(lblList, expected||'', same?'ok':'') + box(lblItem, scanned||'', stateClass);
 
   if(expected && scanned){
     if(same){
-      badge.textContent='✅ CORRETTO'; badge.className='badge ok';
-      resultText.innerHTML='Match perfetto!';
-      okSound(); speak('Codice corretto'); vibrate(60);
+      badge.textContent='✅ ' + t('status_match_ok'); badge.className='badge ok';
+      resultText.innerHTML=t('status_match_ok');
+      okSound(); if(settings.voice) speak(t('voice_ok')); vibrate(60);
       pendingOK = expected;
-      openQtyModal(pendingOK);   // resta nella TAB Scanner
+      openQtyModal(pendingOK);
     }else{
-      badge.textContent='❌ ERRATO'; badge.className='badge err';
-      resultText.innerHTML='Codice diverso!';
-      errSound(); speak('Errore, codice diverso'); vibrate([60,60,180]);
+      badge.textContent='❌ ' + t('status_match_err'); badge.className='badge err';
+      resultText.innerHTML=t('status_match_err');
+      errSound(); if(settings.voice) speak(t('voice_err')); vibrate([60,60,180]);
       pendingOK=null;
     }
   }else{
-    badge.textContent='Pronto'; badge.className='badge';
-    resultText.innerHTML='Scansiona prima la <b>LISTA</b>, poi il <b>PEZZO</b>';
+    setReadyState();
   }
 }
 
@@ -378,11 +722,18 @@ function showToast(text,kind='ok',ms=1800){
   clearTimeout(toastTimer); toastTimer=setTimeout(()=> toast.style.display='none', ms);
 }
 
-/* ===== Tab Righe + Persistenza ===== */
+/* ===== Tab Righe ===== */
+function timeFmt(d){
+  try{
+    return d.toLocaleTimeString(currentLang, {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  }catch(_){
+    return d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  }
+}
 function renderRighe(){
   const tb=$('righeBody');
   tb.innerHTML = picks.map(p=>{
-    const hh=p.ts.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    const hh=timeFmt(p.ts);
     return `<tr><td>${hh}</td><td>${p.codice}</td><td>${p.qty}</td><td>${p.commessa||'-'}</td><td>${p.posizione||'-'}</td></tr>`;
   }).join('');
   $('scaricaCSV').disabled = picks.length===0;
@@ -397,74 +748,40 @@ function toCSV(){
   }).join('\n');
   return head+body;
 }
-function loadPicks(){
-  try{
-    const arr = JSON.parse(localStorage.getItem(LSKEY_PICKS) || '[]');
-    picks = arr.map(p => ({
-      ts: new Date(p.ts),
-      codice: p.codice,
-      qty: p.qty,
-      commessa: p.commessa,
-      posizione: p.posizione
-    }));
-    renderRighe();
-  }catch(_){}
-}
-function savePicks(){
-  try{
-    const arr = picks.map(p => ({
-      ts: p.ts.getTime(),
-      codice: p.codice,
-      qty: p.qty,
-      commessa: p.commessa,
-      posizione: p.posizione
-    }));
-    localStorage.setItem(LSKEY_PICKS, JSON.stringify(arr));
-  }catch(_){}
-}
-
 $('scaricaCSV').addEventListener('click', ()=>{
   if(!picks.length) return;
   const csv=toCSV();
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
   const url=URL.createObjectURL(blob);
-  const a=document.createElement('a'); a.href=url; a.download=`scheda_picking_${($('commessaInput').value||'commessa')}.csv`; a.click();
+  const a=document.createElement('a'); a.href=url; a.download=`${t('csv_name')}${($('commessaInput').value||'commessa')}.csv`; a.click();
   URL.revokeObjectURL(url);
 });
 $('svuota').addEventListener('click', ()=>{
   if(!picks.length) return;
-  if(confirm('Sicuro di svuotare la sessione corrente?')){
-    picks=[]; savePicks(); renderRighe(); updateUI(); showToast('Sessione svuotata','err',1400);
+  if(confirm(t('confirm_clear'))){
+    picks=[]; renderRighe(); updateUI(); showToast(t('btn_clear'),'err',1400);
   }
 });
 
 /* ===== Modale quantità ===== */
 const qtyModal=$('qtyModal'), qtyInput=$('qtyInput'), qtyMinus=$('qtyMinus'), qtyPlus=$('qtyPlus'), qtyOk=$('qtyOk'), qtyCancel=$('qtyCancel'), qtyInfo=$('qtyInfo');
 function openQtyModal(code){
-  qtyInfo.innerHTML = `Codice: <b>${code}</b>`;
-  qtyInput.value='';                         // vuoto di default
-  qtyInput.placeholder='Inserisci quantità';
+  qtyInfo.innerHTML = `${t('col_codice')}: <b>${code}</b>`;
+  qtyInput.value=''; // campo vuoto come richiesto
   qtyModal.style.display='flex';
   setTimeout(()=>qtyInput.focus(),50);
 }
 function closeQtyModal(){ qtyModal.style.display='none'; }
-qtyMinus.onclick=()=>{ const cur=(qtyInput.value||'').trim(); const n= /^\d+$/.test(cur)? Math.max(1,parseInt(cur,10)-1):1; qtyInput.value=String(n); };
-qtyPlus.onclick =()=>{ const cur=(qtyInput.value||'').trim(); const n= /^\d+$/.test(cur)? (parseInt(cur,10)+1):1; qtyInput.value=String(n); };
+qtyMinus.onclick=()=>{ const v=Math.max(1, parseInt(qtyInput.value||'1',10)-1); qtyInput.value=v; };
+qtyPlus.onclick =()=>{ const v=Math.max(1, parseInt(qtyInput.value||'1',10)+1); qtyInput.value=v; };
 qtyCancel.onclick=()=>{ closeQtyModal(); };
 qtyOk.onclick=()=>{
-  const raw = (qtyInput.value || '').trim();
-  const okNum = /^\d+$/.test(raw) && parseInt(raw,10) >= 1;
-  if(!okNum){
-    showToast('Inserisci una quantità valida (≥ 1)','err',1600);
-    qtyInput.focus(); return;
-  }
-  const qty=parseInt(raw,10);
-  if(!pendingOK){ closeQtyModal(); return; }
+  let q = parseInt(qtyInput.value||'0',10);
+  if(!(q>=1)) { qtyInput.focus(); return; }
   const ts=new Date();
   const cm=sanitize($('commessaInput').value,64), ps=sanitize($('posizioneInput').value,64);
-  picks.push({ts, codice: sanitize(pendingOK,128), qty, commessa:cm, posizione:ps});
-  savePicks();
-  renderRighe(); showToast('Riga aggiunta','ok',1400);
+  picks.push({ts, codice: sanitize(pendingOK,128), qty:q, commessa:cm, posizione:ps});
+  renderRighe(); showToast(t('toast_added'),'ok',1400);
   pendingOK=null; scanned=null; updateUI(); closeQtyModal();
 };
 
@@ -473,8 +790,11 @@ $('reset').addEventListener('click', ()=>{ expected=null; scanned=null; pendingO
 
 /* ===== Camera fullscreen (BarcodeDetector ⇒ ZXing) ===== */
 const camFS=$('camFS'), camClose=$('camClose'), video=$('video'), overlay=$('overlay'), guide=$('guide'), laser=$('laser');
-let stream=null, track=null;
+let stream=null, track=null, usingZX=false;
+let currentMode=null;
+
 camClose.addEventListener('click', stopCameraFS);
+
 $('scanList').addEventListener('click', ()=>startScanFS('list'));
 $('scanItem').addEventListener('click', ()=>startScanFS('item'));
 
@@ -483,25 +803,32 @@ function canAccept(){
   if(now-lastScanTs<600) return false;
   lastScanTs=now; return true;
 }
+
 async function startScanFS(which){
-  activateTab('scanner');              // resta nella tab Scanner
-  saveSessionFields();                 // salva subito
+  // resta nella TAB Scanner
+  activateTab('scanner');
+  // salva commessa/posizione
+  saveSessionFields();
+
   const cm=sanitize($('commessaInput').value,64), ps=sanitize($('posizioneInput').value,64);
-  if(!cm || !ps){ alert('Inserisci Numero commessa e Posizione prima di scansionare.'); return; }
+  if(!cm || !ps){ alert(t('alert_fill_first')); return; }
 
   currentMode=which;
   camFS.classList.add('active');
-  if('BarcodeDetector' in window){
-    try{ await startDetectorHybrid(); return; }catch(e){}
+  try{
+    await startDetectorHybrid(); usingZX=false;
+  }catch(e){
+    await startZXingHybrid(); usingZX=true;
   }
-  await startZXingHybrid();
 }
+
 function stopCameraFS(){
   try{
     if(video.srcObject){ video.srcObject.getTracks().forEach(t=>t.stop()); video.srcObject=null; }
     if(track) track.stop();
   }catch(e){}
-  stream=null; track=null; camFS.classList.remove('active'); // restiamo su Scanner
+  stream=null; track=null; camFS.classList.remove('active');
+  // restiamo nella tab Scanner (non cambiamo)
 }
 
 /* Detector nativo */
@@ -549,22 +876,24 @@ async function startDetectorHybrid(){
   loop();
 }
 
-/* ZXing fallback (usa il <video> fullscreen) */
+/* ZXing fallback */
 async function startZXingHybrid(){
   const constraints={video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}};
   const chosen=$('cameraSelect').value; if(chosen) constraints.video.deviceId={ exact: chosen };
 
   stream=await navigator.mediaDevices.getUserMedia(constraints);
   track=stream.getVideoTracks()[0];
-  video.srcObject=stream; await video.play();
 
   const formats=[ZXing.BarcodeFormat.QR_CODE,ZXing.BarcodeFormat.CODE_128,ZXing.BarcodeFormat.EAN_13,ZXing.BarcodeFormat.UPC_A,ZXing.BarcodeFormat.CODE_39];
   const hints=new Map(); hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,formats);
   const reader=new ZXing.BrowserMultiFormatReader(hints);
 
+  // Usa il <video> già presente a schermo intero
+  video.srcObject=stream; await video.play();
+
   const loop=async()=>{
     try{
-      const res=await reader.decodeFromVideoElement(video);
+      const res=await reader.decodeFromVideoDevice(null, video);
       if(res && canAccept()){
         if(pointInGuideZXing(res,video)){ processScan(res.text); return; }
       }
@@ -597,7 +926,8 @@ function processScan(text){
   const val = sanitize(text,128);
   if(currentMode==='list'){ expected=val; }
   else{ scanned=val; }
-  stopCameraFS();   // chiude camera ma resta nella tab Scanner
+  // Chiudiamo la camera sempre (sia ok che err) e restiamo nella tab Scanner
+  stopCameraFS();
   updateUI();
 }
 
@@ -606,22 +936,25 @@ async function populateCameras(){
   try{
     const devices = await navigator.mediaDevices.enumerateDevices();
     const vids = devices.filter(d=>d.kind==='videoinput');
-    $('cameraSelect').innerHTML = '<option value="">(automatica)</option>' +
-      vids.map(v=>`<option value="${v.deviceId}">${v.label||'Fotocamera'}</option>`).join('');
+    $('cameraSelect').innerHTML = `<option value="">${t('opt_camera_auto')}</option>` +
+      vids.map(v=>`<option value="${v.deviceId}">${v.label||'Camera'}</option>`).join('');
   }catch(_){}
 }
 if(navigator.mediaDevices?.enumerateDevices){ populateCameras(); }
 
-/* ===== Avvio + autosave ===== */
+/* ===== Avvio ===== */
+function initI18n(){
+  // applica la lingua corrente a tutti gli elementi data-i18n
+  applyLang(currentLang);
+  // imposta selettore lingua
+  $('optLang').value = currentLang;
+}
+initI18n();
+
 loadSettings();
 loadSessionFields();
-loadPicks();
 updateUI();
-
-window.addEventListener('beforeunload', ()=>{
-  saveSessionFields();
-  savePicks();
-});
+renderRighe();
 </script>
 </body>
 </html>
