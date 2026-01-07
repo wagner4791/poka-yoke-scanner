@@ -1049,5 +1049,15 @@ renderRighe();
 setNetBadge();
 if(navigator.mediaDevices?.enumerateDevices){ populateCameras(); }
 </script>
+  <script>
+// PROTEZIONE CHIUSURA ACCIDENTALE
+window.addEventListener('beforeunload', function (e) {
+  // Se ci sono righe raccolte, chiedi conferma prima di uscire
+  if (picks.length > 0) {
+    e.preventDefault();
+    e.returnValue = ''; // Standard per Chrome/Safari
+  }
+});
+</script>
 </body>
 </html>
