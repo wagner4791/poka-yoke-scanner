@@ -298,6 +298,110 @@
 <div id="toast"></div>
 
 <script>
+/* =========================================
+   🛡️ SECURITY PACK (LICENZA + PIN)
+   ========================================= */
+(function(){
+  // CONFIGURAZIONE SICUREZZA
+  const SEC_CONFIG = {
+    expiryDate: '2027-01-01', // Scadenza licenza
+    pinHash: '2025',          // PIN semplice (in chiaro per semplicità di gestione, o usa hash)
+    lsLastRun: 'poka_sec_last_ts',
+    lsLicenseKey: 'poka_license_status'
+  };
+
+  // 1. CONTROLLO DATA E TIME-TRAVEL
+  function checkIntegrity() {
+    const now = new Date();
+    const expiry = new Date(SEC_CONFIG.expiryDate);
+    const lastRun = parseInt(localStorage.getItem(SEC_CONFIG.lsLastRun) || '0');
+
+    // A. Controllo Scadenza
+    if (now > expiry) {
+      blockApp("⛔ LICENZA SCADUTA", "La licenza per questo software è terminata il " + SEC_CONFIG.expiryDate + ".<br>Contattare l'amministratore per il rinnovo.");
+      return false;
+    }
+
+    // B. Controllo Time-Travel (Anti-furbetti)
+    // Se l'orario attuale è minore dell'ultimo utilizzo (con tolleranza 5 min), l'utente ha cambiato l'ora.
+    if (lastRun > 0 && now.getTime() < (lastRun - 300000)) {
+      blockApp("⚠️ ERRORE OROLOGIO", "Rilevata incongruenza nell'orario di sistema.<br>Ripristina l'ora automatica e riavvia l'app.");
+      return false;
+    }
+
+    // Aggiorna ultimo utilizzo
+    localStorage.setItem(SEC_CONFIG.lsLastRun, now.getTime());
+    return true;
+  }
+
+  // 2. MODALE BLOCCO TOTALE
+  function blockApp(title, msg) {
+    document.body.innerHTML = `
+      <div style="position:fixed;inset:0;background:#0F172A;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;z-index:99999;font-family:sans-serif">
+        <h1 style="color:#EF4444;font-size:30px;margin-bottom:20px">${title}</h1>
+        <p style="font-size:18px;color:#9FB1CB;line-height:1.6">${msg}</p>
+        <div style="margin-top:30px;font-size:12px;opacity:0.5">ID: POKA-YOKE-PRO-SEC</div>
+      </div>
+    `;
+    throw new Error("Application Blocked"); // Ferma l'esecuzione JS
+  }
+
+  // 3. GESTIONE LOGIN (PIN)
+  function showLogin() {
+    // Se la sessione è già valida (opzionale: qui chiediamo il PIN ad ogni avvio/refresh per sicurezza massima)
+    // Rimuovi le due righe sotto se vuoi che il PIN venga chiesto SOLO una volta e mai più
+    const session = sessionStorage.getItem('poka_session_valid');
+    if(session === 'true') return; 
+
+    // Crea overlay Login
+    const div = document.createElement('div');
+    div.id = 'sec-overlay';
+    div.style.cssText = 'position:fixed;inset:0;background:#0F172A;z-index:99990;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:20px;';
+    
+    div.innerHTML = `
+      <div style="background:#16223A;padding:30px;border-radius:16px;border:1px solid #273449;width:100%;max-width:320px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,0.5)">
+        <div style="font-weight:800;font-size:20px;margin-bottom:20px;color:#38BDF8">🔐 Accesso Sicuro</div>
+        <input type="tel" id="sec-pin" placeholder="Inserisci PIN" maxlength="4" style="width:100%;padding:15px;font-size:24px;text-align:center;border-radius:10px;border:1px solid #273449;background:#0d182f;color:#fff;font-weight:bold;letter-spacing:5px;margin-bottom:20px;outline:none;">
+        <button id="sec-btn" style="width:100%;padding:15px;background:#38BDF8;color:#05263A;border:none;border-radius:10px;font-weight:bold;font-size:16px;cursor:pointer">SBLOCCA</button>
+        <div id="sec-msg" style="margin-top:15px;color:#EF4444;font-size:14px;min-height:20px"></div>
+      </div>
+      <div style="margin-top:20px;color:#64748B;font-size:12px">Fratelli Farooq • Licenza valida fino al 2027</div>
+    `;
+    document.body.appendChild(div);
+
+    const inp = document.getElementById('sec-pin');
+    const btn = document.getElementById('sec-btn');
+    const msg = document.getElementById('sec-msg');
+
+    function tryLogin() {
+      if (inp.value === SEC_CONFIG.pinHash) {
+        sessionStorage.setItem('poka_session_valid', 'true');
+        div.remove(); // Rimuove overlay
+        checkIntegrity(); // Avvia controllo data
+      } else {
+        msg.textContent = "PIN errato. Riprova.";
+        inp.value = '';
+        inp.focus();
+        vibrate([50,50,50]); // Vibrazione errore (se definita dopo, qui potrebbe non andare, ma è ok)
+      }
+    }
+
+    btn.onclick = tryLogin;
+    inp.onkeydown = (e) => { if(e.key === 'Enter') tryLogin(); };
+    inp.focus();
+  }
+
+  // AVVIO CONTROLLI
+  // Prima controlliamo l'integrità, se ok mostriamo login
+  if(checkIntegrity()) {
+    // Ritardiamo leggermente per assicurarci che il DOM sia pronto
+    window.addEventListener('DOMContentLoaded', showLogin);
+  }
+
+})();
+/* =========================================
+   FINE SECURITY PACK
+   ========================================= */
 /* ===== i18n (PT-BR / IT / EN / UR) ===== */
 const i18n = {
   "it": {
